@@ -1,0 +1,216 @@
+STATUT | PRIORITE | PROG | DATE ACTION | D.DEBUT | DATE RAPPEL | ELEMENT | ACTION | ACTEUR | STRUCTURE | ASSIGNE A | D.FIN PREVUE | D.FIN | DUREE G. | DUREE E. | COMMENTAIRE
+----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+-----+----
+6 | Retard | Immédiate & Elevée | 5.5555555555555552E-2 | 46154 | 46152 | 46156 | GOUVERNANCE | Accompagnement A.KOUT/Projet OAIC | GD_TRADING | POLE SUPPORT & PERFORMANCE | A.KOUT | 46188 |  | 141 | - | 
+7 | Retard | Immédiate & Elevée | 0.2 | 46222 | 46219 | 46224 | PROCESS | Constitution dossiers importations courants 2026 (Physique) | GD_TRADING | POLE SUPPORT & PERFORMANCE | SUPPLY CHAIN | 46234 |  | 74 | - | 
+8 | Retard | Immédiate & Elevée | 0.2 | 46222 | 46219 | 46224 | PROCESS | Archives dossiers importation (Physique) 2018-2025 | GD_TRADING | POLE SUPPORT & PERFORMANCE | SUPPLY CHAIN | 46234 |  | 74 | - | 
+9 | Retard | Immédiate & Elevée | 0.2 | 46222 | 46219 | 46224 | PROCESS | Transfert credit note arrêté au 30/06/2026 à KERRY | GD_TRADING | POLE SUPPORT & PERFORMANCE | SUPPLY CHAIN | 46234 |  | 74 | - | 
+10 | Retard | Immédiate & Elevée | 0.77777777777777779 | 46222 | 46180 | 46224 | GOUVERNANCE | Gestion anomalie acide sorbique | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | O.BENREDOUANE | 46234 |  | 113 | - | 
+11 | Retard | Immédiate & Elevée | 0.43 | 46223 | 46180 | 46225 | GOUVERNANCE | Entretien recadrage H.SOUALEM | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | O.BENREDOUANE | 46280 |  | 113 | - | 
+12 | Achevée | Courte échéance & Modérée | 1 | 46184 | 46174 | - | RESSOURCES / OUTILS | Mise à niveau dépôt 1, Lot télésurveillance | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46198 | 46186 | 12 | -12 | 
+13 | Achevée | Courte échéance & Modérée | 1 | 46184 | 46174 | - | RESSOURCES / OUTILS | Mise à niveau Baba Hassen, Lot télésurveillance | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46198 | 46186 | 12 | -12 | 
+14 | Achevée | Courte échéance & Modérée | 1 | 46184 | 46174 | - | RESSOURCES / OUTILS | Mise à niveau dépôt Magasin, Lot télésurveillance | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46198 | 46186 | 12 | -12 | 
+15 | Achevée | Courte échéance & Modérée | 1 | 46184 | 46174 | - | RESSOURCES / OUTILS | Mise à niveau dépôt 2, Lot télésurveillance | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46198 | 46186 | 12 | -12 | 
+16 | Achevée | Immédiate & Elevée | 1 | 46155 | 46152 | - | GOUVERNANCE | Participation évènement ALGERIA JOB SUMMIT | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46177 | 46177 | 25 | 0 | 
+17 | Achevée | Immédiate & Elevée | 1 | 46203 | 46152 | - | GOUVERNANCE | Révision des entités (Noms / Raisons sociales) | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46387 | 46203 | 51 | -184 | 
+18 | En cours | Immédiate & Critique | 3.7037037037037035E-2 | 46153 | 46144 | 46154 | GOUVERNANCE | Recouvrement créance B.BELDJEBEL | PARTENAIRE | BELDJEBEL BELKACEM | D.-E.ZOUBA | 46387 |  | 149 | - | 
+19 | Achevée | Immédiate & Elevée | 1 | 46180 | 46154 | - | EQUIPE | Induction M.MOBARKI | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46168 | 46182 | 28 | 14 | 
+20 | En cours | Courte échéance & Critique | 0 | 46293 | 46293 | 46301 |  | SGFDSQGGFDFDHDH | PARTENAIRE | ONTA | H.ABBOU | 46325 |  | 0 | - | 
+21 | Retard | Immédiate & Elevée | 0 | 46210 | 46210 | 46212 | EQUIPE | Induction K.ICHIRA | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46234 |  | 83 | - | 
+22 | Achevée | Courte échéance & Elevée | 1 | 46158 | 46159 | - | PROCESS | Elaboration fiches de poste | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46173 | 46173 | 14 | 0 | 
+23 | Achevée | Immédiate & Elevée | 1 | 46182 | 46159 | - | RESSOURCES / OUTILS | Installation système télésurveillance Atelier INOX | PARTENAIRE | AKROUF RIAD | D.-E.ZOUBA | 46184 | 46186 | 27 | 2 | 
+24 | Achevée | Immédiate & Elevée | 1 | 46201 | 46159 | - | RESSOURCES / OUTILS | Installation système télésurveillance Bureau Baba Hassen | PARTENAIRE | AKROUF RIAD | D.-E.ZOUBA | 46188 | 46225 | 66 | 37 | 
+25 | Achevée | Courte échéance & Elevée | 1 | 46159 | 46152 | - | RESSOURCES / OUTILS | Installation appareil de pointage | PARTENAIRE | AKROUF RIAD | D.-E.ZOUBA | 46173 | 46173 | 21 | 0 | 
+26 | En cours | Immédiate & Elevée | 1.276595744680851E-2 | 46155 | 46152 | 46159 | GOUVERNANCE | Accompagnement technique pour les dossiers AAPI | PARTENAIRE | HABITA NEDJLA | D.-E.ZOUBA | 46387 |  | 141 | - | 
+27 | Retard | Courte échéance & Elevée | 8.6956521739130432E-2 | 46182 | 46180 | 46194 | PROCESS | Elaboration procédure Gestion des caisses | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46203 |  | 113 | - | 
+28 | Retard | Courte échéance & Elevée | 8.6956521739130432E-2 | 46182 | 46180 | 46194 | PROCESS | Elaboration procédure Gestion demande de paiement | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46203 |  | 113 | - | 
+29 | Retard | Courte échéance & Elevée | 8.6956521739130432E-2 | 46182 | 46180 | 46194 | PROCESS | Elaboration procédure Gestion frais de mission | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46203 |  | 113 | - | 
+30 | Achevée | Courte échéance & Modérée | 1 | 46159 | 46152 | - | RESSOURCES / OUTILS | Installation nouveau mobilier | PARTENAIRE | SARL STAR BLX | D.-E.ZOUBA | 46173 | 46167 | 15 | -6 | 
+31 | Retard | Immédiate & Modérée | En retard | 46201 | 46181 | 46209 | RESSOURCES / OUTILS | Implémentation solution ODOO (Phase Pré-test) | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46188 |  | 112 | - | 
+32 | Retard | Immédiate & Modérée | 0.48 | 46177 | 46153 | 46183 | RESSOURCES / OUTILS | Implémentation solution ODOO (Phase Test) | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46203 |  | 140 | - | 
+33 | En cours | Immédiate & Modérée | 0.10256410256410256 | 46177 | 46153 | 46183 | RESSOURCES / OUTILS | Implémentation solution ODOO (Phase Go Live) | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46387 |  | 140 | - | 
+34 | Retard | Courte échéance & Elevée | 0 | 46173 | 46173 | 46182 | GOUVERNANCE | Prise en charge des créances par un organisme | PARTENAIRE | CAGEX | D.-E.ZOUBA | 46234 |  | 120 | - | 
+35 | Achevée | Immédiate & Elevée | 1 | 46176 | 46044 | - | EQUIPE | Accompagnement stagiaire S.BOUNIF | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46203 | 46203 | 159 | 0 | 
+36 | Achevée | Immédiate & Critique | 1 | 46191 | 46182 | - | PROCESS | Mise à jour fichier fournisseurs PC COMPTA | GD_TRADING | COMPTABILITE | H.ABBOU | 46191 | 46191 | 9 | 0 | 
+37 | Achevée | Immédiate & Critique | 1 | 46201 | 46182 | - | PROCESS | Mise à jour fichier clients PC COMPTA | GD_TRADING | COMPTABILITE | H.ABBOU | 46202 | 46201 | 19 | -1 | 
+38 | Achevée | Immédiate & Critique | 1 | 46191 | 46190 | - | REPORTING | Situation comptable arrêtée au 31/05/2026 | GD_TRADING | COMPTABILITE | H.ABBOU | 46196 | 46196 | 6 | 0 | 
+39 | Achevée | Immédiate & Critique | 1 | 46229 | 46223 | - | PROCESS | Transmission liste des clients (Informations à compléter) | GD_TRADING | COMPTABILITE | H.ABBOU | 46234 | 46230 | 7 | -4 | 
+40 | Achevée | Immédiate & Critique | 1 | 46229 | 46187 | - | PROCESS | Transmission liste des fournisseurs (Informations à compléter) | GD_TRADING | COMPTABILITE | H.ABBOU | 46234 | 46230 | 43 | -4 | 
+41 | Retard | Immédiate & Critique | 0 | 46201 | 46201 | 46202 | PROCESS | Centraliser les archives de la Comptabilité <2025 | GD_TRADING | COMPTABILITE | H.ABBOU | 46265 |  | 92 | - | 
+42 | Achevée | Immédiate & Critique | 1 | 46202 | 46202 | - | PROCESS | Justifier le montant de 170 000,00 remis à D.-e.ZOUBA | GD_TRADING | COMPTABILITE | H.ABBOU | 46204 | 46203 | 1 | -1 | 
+43 | Achevée | Immédiate & Critique | 1 | 46202 | 46187 | - | PROCESS | Validation clients PC COMPTA | GD_TRADING | COMPTABILITE | H.ABBOU | 46234 | 46583 | 396 | 349 | 
+44 | En cours | Immédiate & Elevée | 5.7739557739557738E-2 | 46229 | 46182 | 46231 | PROCESS | Transfert journal des ventes | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46996 |  | 111 | - | 
+45 | Retard | Immédiate & Elevée | 0.7407407407407407 | 46202 | 46182 | 46204 | PROCESS | Vérification dossiers importation 2025 | GD_TRADING | POLE SUPPORT & PERFORMANCE | D.-E.ZOUBA | 46209 |  | 111 | - | 
+46 | Retard | Immédiate & Elevée | En retard | 46229 | 46182 | 46231 | PROCESS | Organisation des archives | GD_TRADING | COMPTABILITE | H.ABBOU | 46203 |  | 111 | - | 
+47 | Retard | Immédiate & Modérée | 0.44827586206896552 | 46187 | 46174 | 46194 | GOUVERNANCE | Conventionnement "Mécanique générale" | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46203 |  | 119 | - | 
+48 | Achevée | Courte échéance & Modérée | 1 | 46182 | 46174 | - | RESSOURCES / OUTILS | Mise à niveau dépôt 1, Lot génie civil | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46193 | 46184 | 10 | -9 | 
+49 | Retard | Immédiate & Elevée | En retard | 46203 | 46174 | 46209 | RESSOURCES / OUTILS | Mise à niveau dépôt 1, Lot sanitaires | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46193 |  | 119 | - | 
+50 | Achevée | Immédiate & Elevée | 1 | 46203 | 46191 | - | RESSOURCES / OUTILS | Réalisation carte de visite M.MOBARKI | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46198 | 46204 | 13 | 6 | 
+51 | Achevée | Immédiate & Elevée | 1 | 46193 | 46191 | - | PROCESS | Etablissement PV constatation d'existence | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46198 | 46194 | 3 | -4 | 
+52 | Achevée | Immédiate & Elevée | 1 | 46225 | 46225 | - | RESSOURCES / OUTILS | Acquisition Climatiseurs et TV's | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46234 | 46236 | 11 | 2 | 
+53 | Achevée | Immédiate & Elevée | 1 | 46225 | 46225 | - | RESSOURCES / OUTILS | Création SARL CLEAN | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46234 | 46230 | 5 | -4 | 
+54 | Achevée | Immédiate & Elevée | 1 | 46225 | 46225 | - | RESSOURCES / OUTILS | Création SARL BROASTER | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46234 | 46230 | 5 | -4 | 
+55 | En cours | Immédiate & Elevée | - | 46235 | 46235 | 46237 | EQUIPE | Nettoyage Dépôt 1 & 2 | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 06/08/02026 |  | 58 | - | 
+56 | Retard | Immédiate & Elevée | 0 | 46238 | 46238 | 46240 | EQUIPE | Operation deratisation | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46249 |  | 55 | - | 
+57 | Retard | Immédiate & Elevée | 0 | 46238 | 46238 | 46240 | EQUIPE | Operation desinfestion | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46249 |  | 55 | - | 
+58 | Retard | Immédiate & Elevée | 0 | 46238 | 46238 | 46240 | EQUIPE | Operation desinctisation | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46249 |  | 55 | - | 
+59 | Retard | Immédiate & Elevée | En retard | 46203 | 46174 | 46209 | RESSOURCES / OUTILS | Mise à niveau dépôt 1, Lot électricité | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46193 |  | 119 | - | 
+60 | Achevée | Immédiate & Modérée | 1 | 46194 | 46191 | - | RESSOURCES / OUTILS | Mise à niveau dépôt 1, Divers achats | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46203 | 46195 | 4 | -8 | 
+61 | Retard | Courte échéance & Modérée | 1 | 46203 | 46187 | 46217 | RESSOURCES / OUTILS | Mise en service balise RENAULT KANGOO | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46203 |  | 106 | - | 
+62 | Achevée | Courte échéance & Modérée | 1 | 46201 | 46187 | - | RESSOURCES / OUTILS | Mise à niveau cuisine (Bureau Baba Hassen) | GD_TRADING | M.Gx & LOGISTIQUE | M.BENGUERGOURA | 46203 | 46209 | 22 | 6 | 
+63 | Achevée | Immédiate & Critique | 1 | 46190 | 46174 | - | PROCESS | Validation fichier suivi des échantillons | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46191 | 46194 | 20 | 3 | 
+64 | Achevée | Immédiate & Critique | 1 | 46218 | 46185 | - | RESSOURCES / OUTILS | La nouvelle identité visuelle /Site Web | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46224 | 46219 | 34 | -5 | 
+65 | Retard | Immédiate & Critique | En retard | 46229 | 46219 | 46230 | GOUVERNANCE | Devis laboratoire d'analyses AGROPROLAB | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46228 |  | 74 | - | 
+66 | Retard | Immédiate & Critique | En retard | 46229 | 46219 | 46230 | GOUVERNANCE | Devis laboratoire d'analyses CACQE | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46228 |  | 74 | - | 
+67 | Achevée | Immédiate & Critique | 1 | 46229 | 46217 | - | PROCESS | Mise à jour coordonnées Google maps, Alger, Constantine | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46234 | 46235 | 18 | 1 | 
+68 | Achevée | Immédiate & Critique | 1 | 46229 | 46185 | - | RESSOURCES / OUTILS | Participation la nouvelle identité visuelle /Banner Recrutement | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46224 | 46235 | 50 | 11 | 
+69 | Achevée | Immédiate & Critique | 1 | 46218 | 46185 | - | RESSOURCES / OUTILS | Participation la nouvelle identité visuelle /Banner Entreprise | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46224 | 46218 | 33 | -6 | 
+70 | Achevée | Immédiate & Critique | 1 | 46194 | 46185 | - | GOUVERNANCE | Participation au relooking du banner "Recrutement" | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46193 | 46204 | 19 | 11 | 
+71 | Retard | Immédiate & Critique | En retard | 46229 | 46190 | 46230 | PROCESS | Recueillir les recettes (N.SELLIDJ) | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46210 |  | 103 | - | 
+72 | Achevée | Immédiate & Critique | 1 | 46190 | 46190 | - | REPORTING | Disposer de l'accès à la base de connaissances KERRY | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46203 | 46216 | 26 | 13 | 
+73 | Achevée | Immédiate & Critique | 1 | 46190 | 46183 | - | REPORTING | Etablir le rapport de mission "KERRY" en Turquie | GD_TRADING | COORDINATION R&I | M.MOBARKI | 46191 | 46191 | 8 | 0 | 
+74 | Retard | Courte échéance & Faible | 0 | 46174 | 46174 | 46188 | REPORTING | Etablir le rapport de mission en Egypte | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | N.BOUZID | 46195 |  | 119 | - | 
+75 | Retard | Immédiate & Elevée | En retard | 46218 | 46149 | 46222 | GOUVERNANCE | Demande de restitution du remboursement sinistre Dossier n°161002511950024 | PARTENAIRE | SPA BNP PARIBAS EL-DJAZAIR | N.HABACHI | 46203 |  | 144 | - | 
+76 | Retard | Immédiate & Critique | En retard | 46218 | 46147 | 46219 | GOUVERNANCE | Clôture compte | PARTENAIRE | SPA CPA | N.HABACHI | 46191 |  | 146 | - | 
+77 | Achevée | Immédiate & Faible | 1 | 46218 | 46191 | - | REPORTING | Valorisation frais dossiers importation 2025 | GD_TRADING | FINANCES | N.HABACHI | 46204 | 46218 | 27 | 14 | 
+78 | Retard | Immédiate & Elevée | 0.16216216216216217 | 46218 | 46212 | 46222 | REPORTING | Déclaration des informations statistiques du premier semestre 2026 | PARTENAIRE | MIIP | N.HABACHI | 46249 |  | 81 | - | 
+79 | Retard | Courte échéance & Elevée | En retard | 46218 | 46187 | 46229 | REPORTING | Etat des conventions & contrats en cours de validité | GD_TRADING | FINANCES | N.HABACHI | 46203 |  | 106 | - | 
+80 | Achevée | Immédiate & Critique | 1 | 46218 | 46209 | - | REPORTING | Transfert des archives 2025 | GD_TRADING | FINANCES | N.HABACHI | 46210 | 46210 | 1 | 0 | 
+81 | Achevée | Immédiate & Critique | 1 | 46218 | 46152 | - | REPORTING | Suivi des états de créances 2018-2026 (Déclaré) | GD_TRADING | FINANCES | N.HABACHI | 46201 | 46215 | 63 | 14 | 
+82 | Achevée | Immédiate & Critique | 1 | 46209 | 46183 | - | REPORTING | Suivi des états de créances SF & DECLARES | GD_TRADING | FINANCES | N.HABACHI | 46201 | 46209 | 26 | 8 | 
+83 | Achevée | Immédiate & Critique | 1 | 46197 | 46152 | - | REPORTING | Valorisation permanente du fichier des stocks | GD_TRADING | FINANCES | N.HABACHI | 46195 | 46197 | 45 | 2 | 
+84 | Achevée | Courte échéance & Critique | 1 | 46209 | 46195 | - | RESSOURCES / OUTILS | Test Solution FENEKIO | PARTENAIRE | SARL LEADERSOFT | R.NAFA | 46197 | 46209 | 14 | 12 | 
+85 | Retard | Courte échéance & Critique | En retard | 46216 | 46209 | 46224 | RESSOURCES / OUTILS | Etablir le rapport sur l'utilisation de la Solution FENEKIO | PARTENAIRE | SARL LEADERSOFT | R.NAFA | 46215 |  | 84 | - | 
+86 | Retard | Immédiate & Elevée | 0.75 | 46216 | 46195 | 46218 | REPORTING | Mise en place des états pour analyse | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46223 |  | 98 | - | 
+87 | Retard | Immédiate & Elevée | En retard | 46216 | 46195 | 46218 | REPORTING | Préparation états de prêts & emprunts | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46212 |  | 98 | - | 
+88 | Retard | Immédiate & Elevée | En retard | 46216 | 46195 | 46218 | PROCESS | Gestion des retours des palettes | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46212 |  | 98 | - | 
+89 | Retard | Immédiate & Elevée | En retard | 46216 | 46195 | 46218 | PROCESS | Elaboration instruction d'affectation des ressources et mise en conformité à la règle DG | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46212 |  | 98 | - | 
+90 | Retard | Immédiate & Elevée | En retard | 46216 | 46195 | 46218 | PROCESS | Gestion des échéances | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46212 |  | 98 | - | 
+91 | Retard | Immédiate & Elevée | En retard | 46216 | 46180 | 46218 | GOUVERNANCE | Lancement échantillon ruban adhésif 1000y & 100y 38μ avec test | PARTENAIRE | SPA FALAIT | R.NAFA | 46209 |  | 113 | - | 
+92 | Achevée | Immédiate & Critique | 1 | 46154 | 46147 | - | PROCESS | Classement factures SF | GD_TRADING | B.U.INGREDIENTS | R.NAFA | 46173 | 46173 | 26 | 0 | 
+93 | Retard | Immédiate & Elevée | 0.20967741935483872 | 46216 | 46203 | 46218 | RESSOURCES / OUTILS | Mise à jour fichier client "RC,NIF, NIS, AI,…......) | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46265 |  | 90 | - | 
+94 | Achevée | Immédiate & Elevée | 1 | 46195 | 46195 | - | RESSOURCES / OUTILS | Identifier les factures dont l'objet est "Régularisation" : Solution NOVOREKA | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46201 | 46202 | 7 | 1 | 
+95 | Achevée | Immédiate & Elevée | 1 | 46182 | 46188 | - | RESSOURCES / OUTILS | Renseigner la rubrique "Employé" : Solution NOVOREKA | GD_TRADING | POLE DEVELOPPEMENT DES ACTIVITES | R.NAFA | 46195 | 46195 | 7 | 0 | 
+96 | En cours | Immédiate & Critique | 0.1276595744680851 | 46182 | 46152 | 46183 | REPORTING | Revue des Achats internationaux | GD_TRADING | ACHATS INTERNATIONAUX | SUPPLY CHAIN | 46387 |  | 141 | - | 
+97 | Retard | Immédiate & Elevée | 7.6923076923076927E-2 | 46193 | 46187 | 46195 | GOUVERNANCE | Constitution B.D. HS-CODE | GD_TRADING | ACHATS INTERNATIONAUX | SUPPLY CHAIN | 46265 |  | 106 | - | 
+98 | Retard | Immédiate & Elevée | 0.375 | 46193 | 46187 | 46195 | GOUVERNANCE | Cas : Qualité acide sorbique (ARSHINE) | PARTENAIRE | ARSHINE | SUPPLY CHAIN | 46203 |  | 106 | - | 
+99 | Retard | Immédiate & Elevée | 0.375 | 46193 | 46187 | 46195 | GOUVERNANCE | Cas : Qualité whithmpreme 8313 (KERRY) | PARTENAIRE | ARSHINE | SUPPLY CHAIN | 46203 |  | 106 | - | 
+100 | Retard | Immédiate & Elevée | 0.33333333333333331 | 46184 | 46175 | 46188 | GOUVERNANCE | Participation évènement JOB DAY ENSM | GD_TRADING | TOP MANAGEMENT | W.GUEZATI | 46202 |  | 118 | - | 
+
+
+===== FREQUENCIES =====
+
+[statuts]
+  45 x Achevée
+  43 x Retard
+  7 x En cours
+
+[prios]
+  43 x Immédiate & Elevée
+  27 x Immédiate & Critique
+  8 x Courte échéance & Modérée
+  7 x Courte échéance & Elevée
+  5 x Immédiate & Modérée
+  3 x Courte échéance & Critique
+  1 x Courte échéance & Faible
+  1 x Immédiate & Faible
+
+[elem]
+  29 x RESSOURCES / OUTILS
+  25 x PROCESS
+  19 x GOUVERNANCE
+  14 x REPORTING
+  7 x EQUIPE
+
+[acteur]
+  79 x GD_TRADING
+  16 x PARTENAIRE
+
+[struct]
+  22 x POLE SUPPORT & PERFORMANCE
+  16 x M.Gx & LOGISTIQUE
+  11 x POLE DEVELOPPEMENT DES ACTIVITES
+  11 x COORDINATION R&I
+  9 x COMPTABILITE
+  6 x FINANCES
+  3 x AKROUF RIAD
+  2 x SARL LEADERSOFT
+  2 x ACHATS INTERNATIONAUX
+  2 x ARSHINE
+  1 x BELDJEBEL BELKACEM
+  1 x ONTA
+  1 x HABITA NEDJLA
+  1 x SARL STAR BLX
+  1 x CAGEX
+  1 x SPA BNP PARIBAS EL-DJAZAIR
+  1 x SPA CPA
+  1 x MIIP
+  1 x SPA FALAIT
+  1 x B.U.INGREDIENTS
+  1 x TOP MANAGEMENT
+
+[assigne]
+  25 x D.-E.ZOUBA
+  16 x M.BENGUERGOURA
+  12 x R.NAFA
+  11 x M.MOBARKI
+  10 x H.ABBOU
+  9 x N.HABACHI
+  7 x SUPPLY CHAIN
+  2 x O.BENREDOUANE
+  1 x A.KOUT
+  1 x N.BOUZID
+  1 x W.GUEZATI
+
+[comm]
+
+
+===== ANOMALIES / A VALIDER =====
+R20: ELEMENT vide
+R22: DATE ACTION (46158) < D.DEBUT (46159)
+R36: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R37: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R38: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R39: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R40: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R41: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R42: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R43: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R46: ACTEUR=GD_TRADING mais STRUCTURE='COMPTABILITE' (attendu POLE ... ou TOP MANAGEMENT)
+R47: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R48: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R49: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R50: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R51: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R52: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R53: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R54: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R55: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R56: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R57: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R58: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R59: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R60: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R61: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R62: ACTEUR=GD_TRADING mais STRUCTURE='M.Gx & LOGISTIQUE' (attendu POLE ... ou TOP MANAGEMENT)
+R63: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R64: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R65: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R66: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R67: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R68: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R69: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R70: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R71: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R72: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R73: ACTEUR=GD_TRADING mais STRUCTURE='COORDINATION R&I' (attendu POLE ... ou TOP MANAGEMENT)
+R77: ACTEUR=GD_TRADING mais STRUCTURE='FINANCES' (attendu POLE ... ou TOP MANAGEMENT)
+R79: ACTEUR=GD_TRADING mais STRUCTURE='FINANCES' (attendu POLE ... ou TOP MANAGEMENT)
+R80: ACTEUR=GD_TRADING mais STRUCTURE='FINANCES' (attendu POLE ... ou TOP MANAGEMENT)
+R81: ACTEUR=GD_TRADING mais STRUCTURE='FINANCES' (attendu POLE ... ou TOP MANAGEMENT)
+R82: ACTEUR=GD_TRADING mais STRUCTURE='FINANCES' (attendu POLE ... ou TOP MANAGEMENT)
+R83: ACTEUR=GD_TRADING mais STRUCTURE='FINANCES' (attendu POLE ... ou TOP MANAGEMENT)
+R92: ACTEUR=GD_TRADING mais STRUCTURE='B.U.INGREDIENTS' (attendu POLE ... ou TOP MANAGEMENT)
+R95: DATE ACTION (46182) < D.DEBUT (46188)
+R96: ACTEUR=GD_TRADING mais STRUCTURE='ACHATS INTERNATIONAUX' (attendu POLE ... ou TOP MANAGEMENT)
+R97: ACTEUR=GD_TRADING mais STRUCTURE='ACHATS INTERNATIONAUX' (attendu POLE ... ou TOP MANAGEMENT)
+R100: ACTEUR=GD_TRADING mais STRUCTURE='TOP MANAGEMENT' (attendu POLE ... ou TOP MANAGEMENT)

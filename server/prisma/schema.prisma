@@ -1,0 +1,398 @@
+// Schéma Prisma — application de suivi des TODO LIST (GD Trading)
+//
+// Source normative : docs/06_MODELE_DE_DONNEES.md (validé le 02/11/2026).
+// Compléments de sécurité : docs/12_SECURITE.md §4.1 (table `session`) et §14.2
+// (T13-01 → T13-13).
+//
+// IMPORTANT — Prisma ne sait pas exprimer :
+//   - les contraintes CHECK,
+//   - les index fonctionnels (`lower(libelle)`),
+//   - les index partiels (`WHERE ...`),
+//   - les clés étrangères composites avec plusieurs relations vers la même table,
+//   - les déclencheurs.
+// Ces éléments sont écrits dans les migrations SQL (`server/prisma/migrations`),
+// qui restent la référence exécutable. Les migrations sont appliquées avec
+// `prisma migrate deploy` (forward-only, docs/06 §14), jamais éditées après
+// application.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Énumérations (docs/06 §4.1)
+// ---------------------------------------------------------------------------
+
+enum RoleUtilisateur {
+  ADMIN
+  RESPONSABLE
+  EMPLOYE
+  CONSULTANT
+
+  @@map("role_utilisateur")
+}
+
+enum OrganisationUtilisateur {
+  GD_TRADING
+  PARTENAIRE
+
+  @@map("organisation_utilisateur")
+}
+
+enum TypeTache {
+  RECURRENTE
+  SIMPLE
+
+  @@map("type_tache")
+}
+
+enum FrequenceRecurrence {
+  QUOTIDIENNE
+  HEBDOMADAIRE
+  MENSUELLE
+  TRIMESTRIELLE
+  ANNUELLE
+
+  @@map("frequence_recurrence")
+}
+
+enum StatutTache {
+  A_FAIRE
+  EN_COURS
+  EN_RETARD
+  TERMINEE
+  TERMINEE_EN_RETARD
+  SUSPENDUE
+  ANNULEE
+
+  @@map("statut_tache")
+}
+
+enum NatureTache {
+  QUOTIDIENNE
+  AUTRE
+
+  @@map("nature_tache")
+}
+
+enum ActeurTache {
+  GD_TRADING
+  PARTENAIRE
+
+  @@map("acteur_tache")
+}
+
+enum StatutManuel {
+  ANNULEE
+  SUSPENDUE
+
+  @@map("statut_manuel")
+}
+
+// ---------------------------------------------------------------------------
+// Référentiels et comptes (docs/06 §5)
+// ---------------------------------------------------------------------------
+
+model Departement {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  libelle   String
+  actif     Boolean   @default(true)
+  creeLe    DateTime  @default(now()) @map("cree_le") @db.Timestamptz(0)
+  modifieLe DateTime  @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  employes  Employe[]
+  utilisateurs Utilisateur[] @relation("UtilisateurService")
+
+  @@index([actif])
+  @@map("departement")
+}
+
+model Employe {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nom             String
+  prenom          String
+  email           String?
+  departementId   String?      @map("departement_id") @db.Uuid
+  actif           Boolean      @default(true)
+  creeLe          DateTime     @default(now()) @map("cree_le") @db.Timestamptz(0)
+  modifieLe       DateTime     @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  departement     Departement? @relation(fields: [departementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  utilisateur     Utilisateur?
+  tachesAssignees Tache[]      @relation("TacheAssigneEmploye")
+  tachesPilotees  Tache[]      @relation("TachePiloteEmploye")
+
+  @@index([departementId])
+  @@map("employe")
+}
+
+model Utilisateur {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employeId             String?         @unique(map: "uq_utilisateur_employe") @map("employe_id") @db.Uuid
+  identifiant           String
+  motDePasseHash        String          @map("mot_de_passe_hash")
+  role                  RoleUtilisateur @default(EMPLOYE)
+  organisation          OrganisationUtilisateur @default(GD_TRADING) @map("organisation")
+  serviceId             String?         @map("service_id") @db.Uuid
+  actif                 Boolean         @default(true)
+  doitChangerMotDePasse Boolean         @default(true) @map("doit_changer_mot_de_passe")
+  tentativesEchouees    Int             @default(0) @map("tentatives_echouees") @db.SmallInt
+  verrouilleJusqua      DateTime?       @map("verrouille_jusqua") @db.Timestamptz(0)
+  derniereConnexionLe   DateTime?       @map("derniere_connexion_le") @db.Timestamptz(0)
+  creeLe                DateTime        @default(now()) @map("cree_le") @db.Timestamptz(0)
+  modifieLe             DateTime        @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  employe               Employe?        @relation(fields: [employeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  service               Departement?    @relation("UtilisateurService", fields: [serviceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tachesRetardValidees  Tache[]         @relation("TacheRetardValide")
+  tachesCreees          Tache[]         @relation("TacheCreePar")
+  tachesAttribuees      Tache[]         @relation("TacheAttribuePar")
+  tachesSupprimees      Tache[]         @relation("TacheSupprimePar")
+  commentaires          Commentaire[]
+  audits                JournalAudit[]
+  sessions              Session[]
+  parametresModifies    Parametre[]     @relation("ParametreModifiePar")
+
+  @@index([role])
+  @@index([serviceId])
+  @@map("utilisateur")
+}
+
+model Partenaire {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  libelle         String
+  actif           Boolean  @default(true)
+  creeLe          DateTime @default(now()) @map("cree_le") @db.Timestamptz(0)
+  modifieLe       DateTime @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  tachesAssignees Tache[]  @relation("TacheAssignePartenaire")
+  tachesPilotees  Tache[]  @relation("TachePilotePartenaire")
+
+  @@index([actif])
+  @@map("partenaire")
+}
+
+model Element {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  libelle   String
+  ordre     Int      @default(0) @db.SmallInt
+  actif     Boolean  @default(true)
+  creeLe    DateTime @default(now()) @map("cree_le") @db.Timestamptz(0)
+  modifieLe DateTime @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  taches    Tache[]
+
+  @@index([actif, ordre])
+  @@map("element")
+}
+
+model Urgence {
+  id       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  libelle  String
+  ordre    Int               @default(0) @db.SmallInt
+  matrices MatricePriorite[]
+
+  @@map("urgence")
+}
+
+model Importance {
+  id       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  libelle  String
+  ordre    Int               @default(0) @db.SmallInt
+  matrices MatricePriorite[]
+
+  @@map("importance")
+}
+
+model MatricePriorite {
+  urgenceId      String     @map("urgence_id") @db.Uuid
+  importanceId   String     @map("importance_id") @db.Uuid
+  score          Int        @db.SmallInt
+  frequenceJours Int        @map("frequence_jours") @db.SmallInt
+  urgence        Urgence    @relation(fields: [urgenceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  importance     Importance @relation(fields: [importanceId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  taches         Tache[]
+
+  @@id([urgenceId, importanceId])
+  @@map("matrice_priorite")
+}
+
+model ActionAPrendre {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  libelle   String
+  actif     Boolean  @default(true)
+  creeLe    DateTime @default(now()) @map("cree_le") @db.Timestamptz(0)
+  modifieLe DateTime @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  taches    Tache[]
+
+  @@map("action_a_prendre")
+}
+
+// ---------------------------------------------------------------------------
+// Table centrale (docs/06 §6)
+// ---------------------------------------------------------------------------
+
+model Tache {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  nature              NatureTache
+  typeTache           TypeTache     @default(SIMPLE) @map("type_tache")
+  frequence           FrequenceRecurrence? @map("frequence")
+  dateFinRecurrence   DateTime?     @map("date_fin_recurrence") @db.Date
+  jourEcheance        Int?          @map("jour_echeance") @db.SmallInt
+  isSupplementaire    Boolean       @default(false) @map("is_supplementaire")
+  tacheOrigineId      String?       @map("tache_origine_id") @db.Uuid
+  libelle             String
+  elementId           String        @map("element_id") @db.Uuid
+  acteur              ActeurTache
+  piloteEmployeId     String?       @map("pilote_employe_id") @db.Uuid
+  pilotePartenaireId  String?       @map("pilote_partenaire_id") @db.Uuid
+  assigneAEmployeId   String?       @map("assigne_a_employe_id") @db.Uuid
+  assigneAPartenaireId String?      @map("assigne_a_partenaire_id") @db.Uuid
+  dateAction          DateTime      @map("date_action") @db.Date
+  dateDebut           DateTime      @map("date_debut") @db.Date
+  dateFinPrevue       DateTime?     @map("date_fin_prevue") @db.Date
+  dateFin             DateTime?     @map("date_fin") @db.Date
+  clotureLe           DateTime?     @map("cloture_le") @db.Timestamptz(0)
+  urgenceId           String        @map("urgence_id") @db.Uuid
+  importanceId        String        @map("importance_id") @db.Uuid
+  actionAPrendreId    String?       @map("action_a_prendre_id") @db.Uuid
+  statutManuel        StatutManuel? @map("statut_manuel")
+  statut              StatutTache   @default(A_FAIRE) @map("statut")
+  statutAvantSuspension StatutTache? @map("statut_avant_suspension")
+  progressionManuelle Int?          @map("progression_manuelle") @db.SmallInt
+  progressionSurchargee Boolean     @default(false) @map("progression_surchargee")
+  dateMiseAJour       DateTime?     @map("date_mise_a_jour") @db.Timestamptz(0)
+  dateControle        DateTime?     @map("date_controle") @db.Date
+  motifNonAchevement  String?       @map("motif_non_achevement")
+  motifRetard         String?       @map("motif_retard")
+  dateFinReelleEstimee DateTime?    @map("date_fin_reelle_estimee") @db.Date
+  retardValideParId   String?       @map("retard_valide_par_id") @db.Uuid
+  retardValideLe      DateTime?     @map("retard_valide_le") @db.Timestamptz(0)
+  suspendueLe         DateTime?     @map("suspendue_le") @db.Timestamptz(0)
+  repriseLe           DateTime?     @map("reprise_le") @db.Timestamptz(0)
+  motifSuspensionAnnulation String? @map("motif_suspension_annulation")
+  creeParId           String        @map("cree_par_id") @db.Uuid
+  attribueParId       String        @map("attribue_par_id") @db.Uuid
+  supprimeLe          DateTime?     @map("supprime_le") @db.Timestamptz(0)
+  supprimeParId       String?       @map("supprime_par_id") @db.Uuid
+  creeLe              DateTime      @default(now()) @map("cree_le") @db.Timestamptz(0)
+  modifieLe           DateTime      @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  version             Int           @default(1)
+
+  element          Element         @relation(fields: [elementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assigneAEmploye  Employe?        @relation("TacheAssigneEmploye", fields: [assigneAEmployeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  assigneAPartenaire Partenaire?   @relation("TacheAssignePartenaire", fields: [assigneAPartenaireId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  piloteEmploye    Employe?        @relation("TachePiloteEmploye", fields: [piloteEmployeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  pilotePartenaire Partenaire?     @relation("TachePilotePartenaire", fields: [pilotePartenaireId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  matrice          MatricePriorite @relation(fields: [urgenceId, importanceId], references: [urgenceId, importanceId], onDelete: Restrict, onUpdate: Cascade)
+  actionAPrendre   ActionAPrendre? @relation(fields: [actionAPrendreId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  tacheOrigine     Tache?          @relation("TacheOrigine", fields: [tacheOrigineId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  occurrences      Tache[]         @relation("TacheOrigine")
+  retardValidePar  Utilisateur?    @relation("TacheRetardValide", fields: [retardValideParId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  creePar          Utilisateur     @relation("TacheCreePar", fields: [creeParId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  attribuePar      Utilisateur     @relation("TacheAttribuePar", fields: [attribueParId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  supprimePar      Utilisateur?    @relation("TacheSupprimePar", fields: [supprimeParId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  commentaires     Commentaire[]
+
+  @@index([assigneAEmployeId], map: "ix_tache_assigne_employe")
+  @@index([assigneAPartenaireId], map: "ix_tache_assigne_partenaire")
+  @@index([piloteEmployeId], map: "ix_tache_pilote_employe")
+  @@index([pilotePartenaireId], map: "ix_tache_pilote_partenaire")
+  @@index([creeParId], map: "ix_tache_cree_par")
+  @@index([attribueParId], map: "ix_tache_attribue_par")
+  @@index([elementId], map: "ix_tache_element")
+  @@index([urgenceId, importanceId], map: "ix_tache_matrice")
+  @@index([nature, dateAction], map: "ix_tache_jour")
+  @@index([tacheOrigineId], map: "ix_tache_origine")
+  @@index([typeTache, statut], map: "ix_tache_type_statut")
+  @@map("tache")
+}
+
+// ---------------------------------------------------------------------------
+// Commentaires et audit (docs/06 §7)
+// ---------------------------------------------------------------------------
+
+model Commentaire {
+  id       String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tacheId  String      @map("tache_id") @db.Uuid
+  auteurId String      @map("auteur_id") @db.Uuid
+  texte    String
+  creeLe   DateTime    @default(now()) @map("cree_le") @db.Timestamptz(0)
+  tache    Tache       @relation(fields: [tacheId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  auteur   Utilisateur @relation(fields: [auteurId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tacheId, creeLe])
+  @@map("commentaire")
+}
+
+model JournalAudit {
+  id            BigInt       @id @default(autoincrement())
+  horodatage    DateTime     @default(now()) @db.Timestamptz(0)
+  acteurId      String?      @map("acteur_id") @db.Uuid
+  typeOperation String       @map("type_operation")
+  entite        String
+  entiteId      String?      @map("entite_id")
+  donneesAvant  Json?        @map("donnees_avant") @db.JsonB
+  donneesApres  Json?        @map("donnees_apres") @db.JsonB
+  contexte      Json?        @db.JsonB
+  acteur        Utilisateur? @relation(fields: [acteurId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@index([entite, entiteId])
+  @@index([horodatage])
+  @@index([acteurId])
+  @@map("journal_audit")
+}
+
+// ---------------------------------------------------------------------------
+// Paramètres (docs/06 §5.11)
+// ---------------------------------------------------------------------------
+
+model Parametre {
+  id                       Int          @id @default(1) @db.SmallInt
+  fuseau                   String       @default("Africa/Algiers")
+  weekendJour1             Int          @default(5) @map("weekend_jour_1") @db.SmallInt
+  weekendJour2             Int          @default(6) @map("weekend_jour_2") @db.SmallInt
+  heureDebutJournee        DateTime     @default(dbgenerated("'08:00:00'::time without time zone")) @map("heure_debut_journee") @db.Time(0)
+  pauseDebut               DateTime     @default(dbgenerated("'12:00:00'::time without time zone")) @map("pause_debut") @db.Time(0)
+  pauseFin                 DateTime     @default(dbgenerated("'13:00:00'::time without time zone")) @map("pause_fin") @db.Time(0)
+  heureEcheanceQuotidienne DateTime     @default(dbgenerated("'16:30:00'::time without time zone")) @map("heure_echeance_quotidienne") @db.Time(0)
+  modifieLe                DateTime     @default(now()) @map("modifie_le") @db.Timestamptz(0)
+  modifieParId             String?      @map("modifie_par_id") @db.Uuid
+  modifiePar               Utilisateur? @relation("ParametreModifiePar", fields: [modifieParId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@map("parametre")
+}
+
+// ---------------------------------------------------------------------------
+// Jours fériés (docs/06 §5.10)
+// ---------------------------------------------------------------------------
+
+model JourFerie {
+  id      String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jour    DateTime @unique @db.Date
+  libelle String?
+  creeLe  DateTime @default(now()) @map("cree_le") @db.Timestamptz(0)
+
+  @@map("jour_ferie")
+}
+
+// ---------------------------------------------------------------------------
+// Sessions serveur (docs/12_SECURITE.md §4.1 — T13-04)
+// ---------------------------------------------------------------------------
+
+model Session {
+  id                 String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  utilisateurId      String      @map("utilisateur_id") @db.Uuid
+  jetonHash          String      @unique @map("jeton_hash")
+  creeLe             DateTime    @default(now()) @map("cree_le") @db.Timestamptz(0)
+  derniereActiviteLe DateTime    @default(now()) @map("derniere_activite_le") @db.Timestamptz(0)
+  expireLe           DateTime    @map("expire_le") @db.Timestamptz(0)
+  revoqueLe          DateTime?   @map("revoque_le") @db.Timestamptz(0)
+  ip                 String?     @db.Inet
+  userAgent          String?     @map("user_agent")
+  utilisateur        Utilisateur @relation(fields: [utilisateurId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+
+  @@index([utilisateurId])
+  @@index([expireLe])
+  @@map("session")
+}

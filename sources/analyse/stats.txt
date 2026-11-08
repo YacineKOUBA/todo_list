@@ -1,0 +1,50 @@
+=== 1. PERIODE COUVERTE PAR LES 95 ACTIONS ===
+DATE_ACTION  min=2026-05-11 (46153)   max=2026-09-28 (46293)   filled=95/95
+D_DEBUT      min=2026-01-22 (46044)   max=2026-09-28 (46293)   filled=95/95
+FIN_PREVUE   min=2026-05-26 (46168)   max=2028-08-31 (46996)   filled=94/95
+FIN          min=2026-05-25 (46167)   max=2027-07-15 (46583)   filled=45/95
+
+=== 2. DUREE E. (ecart cloture) : valeurs ===
+  50 x "-"
+  2 x "-1"
+  4 x "-12"
+  1 x "-184"
+  5 x "-4"
+  1 x "-5"
+  2 x "-6"
+  1 x "-8"
+  1 x "-9"
+  2 x +1 (en retard)
+  2 x +11 (en retard)
+  1 x +12 (en retard)
+  1 x +13 (en retard)
+  3 x +14 (en retard)
+  3 x +2 (en retard)
+  1 x +3 (en retard)
+  1 x +349 (en retard)
+  1 x +37 (en retard)
+  2 x +6 (en retard)
+  1 x +8 (en retard)
+  10 x 0 (pile)
+
+=== 3. DUREE G. (duree totale) ===
+  min=0 j   max=396 j   moyenne=69 j
+
+=== 4. DOUBLONS POTENTIELS sur ACTION (col I) ===
+  total actions non vides distinctes: 95 / 95 lignes
+
+=== 5. CELLULES TEXT DANS COLONNES DE DATES (E,F,G,M,N) ===
+  M55 = "06/08/02026" (type=s)
+
+=== 6. ACTIONS SANS D.FIN PREVUE / SANS D.DEBUT ===
+  sans D.FIN PREVUE: 
+  sans D.DEBUT    : 
+  sans D.FIN (non achevees): 50 / 95
+
+=== 7. COHERENCE STATUT vs DATES (recalcul independant) ===
+  -> 0_ecarts sur 95 (le fichier est fige au 2026-05-xx, TODAY() evolue : ecarts attendus)
+
+=== 8. PROGRESSION : valeurs textuelles vs numeriques ===
+  78 x numerique
+  16 x texte ("En retard")
+  1 x texte ("-")

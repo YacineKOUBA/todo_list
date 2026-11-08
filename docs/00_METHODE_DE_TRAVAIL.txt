@@ -1,0 +1,246 @@
+================================================================================
+GD TRADING — APPLICATION WEB DE SUIVI DES TODOLIST
+BRIEF DU PROJET ET METHODE DE TRAVAIL IMPOSEE
+Document de reference — version du 02/11/2026
+================================================================================
+
+Ce document definit l'objectif du projet et la methode de travail a suivre.
+Il remplace la version precedente (01/11/2026), qui etait une copie erronee du
+brief d'un AUTRE projet (application de gestion de stock) et n'avait aucun
+rapport avec le present projet.
+
+
+================================================================================
+1. CONTEXTE
+================================================================================
+
+Entreprise    : GD Trading
+Projet        : application web interne de suivi des TODO LIST des services
+                et du personnel de GD Trading.
+Remplace      : un classeur Excel de suivi des actions (TODO LIST), tenu
+                aujourd'hui manuellement.
+Acces         : reseau local de l'entreprise, application hebergee sur le
+                serveur local de GD Trading.
+Directeur     : administrateur principal de l'application.
+
+
+================================================================================
+2. OBJECTIF
+================================================================================
+
+Reproduire fidelement le fonctionnement du classeur Excel TODO LIST dans une
+application web, en y ajoutant les exigences nouvelles du directeur.
+
+L'application doit etre une application metier complete, et non une simple
+transposition de cellules : regles de gestion, statuts, calculs de progression,
+delais, alertes de retard et droits d'acces doivent etre portes par
+l'application elle-meme.
+
+
+================================================================================
+3. SOURCES DU PROJET
+================================================================================
+
+SOURCE 1 — le classeur Excel d'origine
+           sources/classeur/ClasseurYD.xlsx (copie de travail, NE PAS MODIFIER)
+           2 feuilles : ACTIONS (95 lignes) et BD (19 tables de reference,
+           dont 10 hors perimetre du projet — voir regle R8)
+
+SOURCE 2 — les exigences et regles metier du directeur
+           (documents, notes ou instructions communiques au fil du projet)
+
+SOURCE 3 — les decisions techniques arretees ensemble, au fur et a mesure
+
+Une source non fournie n'est jamais inventee : elle est declaree manquante et
+le point est marque "A VALIDER".
+
+
+================================================================================
+4. SEPARATION TOTALE AVEC L'ANCIEN PROJET
+================================================================================
+
+Le present projet doit rester TOTALEMENT separe du projet precedent
+"EXCEL TO STOCK MANAGEMENT WEB APP".
+
+Interdictions :
+  - aucun code, composant, style ou interface partage ;
+  - aucune dependance, bibliotheque ou configuration partagee ;
+  - aucun modele de donnees ni base de donnees partages ;
+  - aucun fichier du projet precedent copie dans ce dossier ;
+  - aucune reference croisee entre les deux projets.
+
+Emplacement du projet :
+  C:\Users\Y.DROUICHE\Documents\GD Trading - TodoList
+
+Ce dossier est distinct et independant du dossier du projet precedent. Tout
+fichier de ce projet reste dans ce dossier.
+
+
+================================================================================
+5. REGLES DEJA VALIDEES PAR LE DIRECTEUR
+================================================================================
+
+R1. Aucun nom d'acteur n'est repris de l'Excel.
+    Les employes et les partenaires de l'application sont de NOUVEAUX noms,
+    saisis dans l'application. Aucun nom existant dans le classeur Excel n'est
+    importe.
+
+R2. Aucune action n'est reprise de l'Excel.
+    L'application demarre avec une liste d'actions VIDE. Seules les REGLES de
+    gestion du classeur sont reproduites. L'historique des 95 actions reste
+    consultable dans le fichier Excel source, archive dans
+    sources/classeur/ClasseurYD.xlsx.
+
+R3. Referentiel Employes.
+    Les employes de GD Trading sont saisis un par un, dans l'application.
+    Un employe est actif ou inactif ; il n'est jamais supprime s'il est
+    reference par une action.
+
+R4. Referentiel Partenaires.
+    Les partenaires (non employes de GD Trading) sont saisis un par un, dans
+    l'application. Ce referentiel est distinct de toute liste de fournisseurs
+    du classeur Excel.
+
+R5. Referentiel Departements.
+    Les 11 departements internes sont recrees dans l'application, sous forme
+    de referentiel administrable : l'administrateur peut en ajouter et en
+    supprimer.
+
+R6. Role des acteurs sur une action.
+    L'acteur d'une action est soit GD Trading, soit un partenaire.
+      - acteur = GD Trading  -> un employe PILOTE / RESPONSABLE est obligatoire
+      - acteur = PARTENAIRE  -> un partenaire est obligatoire
+      - l'employe ASSIGNE (executant) est distinct du pilote
+      - le departement est un attribut optionnel de la fiche Employe
+
+R7. Toute nouvelle regle metier vient du directeur.
+    Aucune decision metier n'est prise a sa place.
+
+R8. Referentiels de la feuille BD.
+    Sur les 19 tables de la feuille BD, 10 ne concernent pas le suivi des
+    actions et sont ECARTEES du perimetre : articles, categories, marques,
+    fournisseurs, types d'entretien de vehicules, offres commerciales,
+    workflow documentaire, listes residuelles vides, structures jamais
+    appliquees. Elles ne sont ni reprises ni modelisees dans l'application.
+    Detail complet (contenu de chaque table, ce qui est garde et ce qui est
+    ecarte) : docs/01_ANALYSE_FONCTIONNELLE.md section A.3 et DECISION 8.
+
+
+================================================================================
+6. METHODE DE TRAVAIL IMPOSEE — 15 ETAPES
+================================================================================
+
+  1. Analyse complete du fichier Excel
+  2. Documentation du fonctionnement actuel
+  3. Analyse des exigences du directeur
+  4. Comparaison Excel / nouvelles exigences
+  5. Cahier des charges fonctionnel
+  6. Architecture de l'application
+  7. Modele de donnees
+  8. API serveur
+  9. Interface utilisateur
+ 10. Gestion des roles et des permissions
+ 11. Reprise des donnees
+ 12. Tests
+ 13. Securite
+ 14. Deploiement sur le serveur local de GD Trading
+ 15. Documentation utilisateur et administration
+
+REGLE ABSOLUE : aucun code n'est ecrit tant que l'analyse fonctionnelle n'est
+pas validee par le directeur.
+
+
+================================================================================
+7. REGLES DE TRAVAIL — CONDUITE DU PROJET
+================================================================================
+
+M1. Une seule etape a la fois. On ne passe a l'etape suivante qu'apres
+    validation explicite de l'etape en cours.
+
+M2. Rien n'est fait sans validation. Aucune decision, aucune modification
+    structurelle n'est appliquee sans accord explicite.
+
+M3. Aucune colonne, aucune feuille et aucune regle du classeur Excel n'est
+    declaree inutile a priori. Chaque element est analyse et justifie.
+
+M4. Chaque point aborde est qualifie sans ambiguite :
+      - comportement ACTUEL du classeur Excel ;
+      - NOUVELLE REGLE demandee par le directeur ;
+      - PROPOSITION TECHNIQUE du developpeur ;
+      - DECISION VALIDEE (datee).
+
+M5. Tout point inconnu est marque "A VALIDER". Aucune hypothese n'est
+    presentee comme un fait.
+
+M6. Toute contradiction entre l'Excel, les exigences du directeur et les
+    decisions prises est signalee explicitement, sans etre tranchee d'office.
+
+M7. Aucune decision metier n'est prise a la place du directeur.
+
+M8. Chaque livrable est un fichier numerote par etape, depose dans docs/ :
+      docs/01_ANALYSE_FONCTIONNELLE.md   etape 1 + 2
+      docs/02_...                        etape 3
+      ...
+
+M9. Le document d'analyse est tenu en francais et comporte un journal des
+    revisions date.
+
+
+================================================================================
+8. ROLES ET ACCES
+================================================================================
+
+Orientation initiale du brief (a titre historique) :
+  - ADMIN : manipulation complete et consultation ;
+  - tous les autres utilisateurs : consultation seule.
+
+MISE A JOUR DU 01/11/2026 — DECISION 7 et DECISION 12 VALIDEES :
+  - ADMIN       : administration complete (actions, referentiels, comptes) ;
+  - RESPONSABLE : ecriture dans son service + sur ses actions ; service
+                  obligatoire ; un seul responsable par service au plus ;
+  - EMPLOYEE    : met a jour et cree "ses actions" (assignees a lui, dont il
+                  est pilote, ou creees par lui) ;
+  - CONSULTANT  : lecture seule.
+  - Chaque employe du referentiel possede un compte (role par defaut EMPLOYEE).
+  - Suppression d'une action : ADMIN partout ; RESPONSABLE uniquement sur les
+    actions qu'il a lui-meme attribuees ; EMPLOYEE et CONSULTANT jamais.
+
+La matrice detaillee des droits figure dans
+docs/01_ANALYSE_FONCTIONNELLE.md, DECISION 7.
+
+
+================================================================================
+9. POINTS OUVERTS
+================================================================================
+
+Les decisions 1 a 12 sont toutes validees au 01/11/2026 (aucune en attente).
+Les points residuels sont listes dans la partie D de
+docs/01_ANALYSE_FONCTIONNELLE.md.
+
+ETAPE 3 : exigences du directeur recues le 01/11/2026, analyse livree dans
+docs/02_EXIGENCES_DIRECTEUR.md (20 exigences RE-01 a RE-20), VALIDEE le
+01/11/2026. Les 11 tensions (C1 a C11) et les 11 points (A14 a A24) ont ete
+tranches le 02/11/2026 par les DECISIONS 13 a 25.
+
+ETAPE 4 : comparaison Excel / nouvelles exigences livree le 02/11/2026 dans
+docs/03_COMPARAISON_EXCEL_EXIGENCES.md : 59 objets Excel classes
+(30 reproduits, 7 modifies, 22 abandonnes), 20 exigences reliees, 16 anomalies
+traitees, 6 points residuels (P1 a P6). EN ATTENTE DE VALIDATION.
+Prochaine etape : 5 — cahier des charges fonctionnel, apres validation de
+l'etape 4.
+
+
+================================================================================
+10. REFERENCES
+================================================================================
+
+  README.md                          suivi du projet et structure du dossier
+  docs/01_ANALYSE_FONCTIONNELLE.md   etapes 1 et 2, decisions, journal
+  docs/02_EXIGENCES_DIRECTEUR.md     etape 3 : analyse des exigences du directeur
+  docs/03_COMPARAISON_EXCEL_EXIGENCES.md  etape 4 : comparaison Excel / exigences
+  sources/classeur/ClasseurYD.xlsx   classeur Excel d'origine (copie)
+  sources/analyse/                   traces techniques de l'analyse du classeur
+
+================================================================================
+FIN DU DOCUMENT
+================================================================================

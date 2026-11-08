@@ -1,0 +1,23 @@
+UNIQUE FORMULA PATTERNS: 7
+
+### pattern (95 cells) e.g. ACTIONS!B10
+_xlfn.LET(_xlpm.commentaire,Table226[[#This Row],[COMMENTAIRE]],_xlpm.dateAction,Table226[[#This Row],[DATE ACTION]],_xlpm.dateFin,Table226[[#This Row],[D.FIN]],_xlpm.datePrevue,Table226[[#This Row],[D.FIN PREVUE]],_xlpm.aujourdhui,TODAY(),_xlfn.IFS(_xlpm.commentaire="Annulée","Annulée",_xlpm.commentaire="Suspendue","Suspendue",_xlpm.dateFin<>"","Achevée",OR(_xlpm.dateAction="",_xlpm.dateAction>_xlpm.aujourdhui),"A faire",_xlpm.datePrevue<_xlpm.aujourdhui,"Retard",TRUE,"En cours"))
+
+### pattern (15 cells) e.g. ACTIONS!D10
+IFERROR(_xlfn.LET(_xlpm.DateRef,IF(E10="",TODAY(),E10),IF(N10<>"",1,IF(_xlpm.DateRef>M10,"En retard",IF(_xlpm.DateRef<F10,0,(_xlpm.DateRef-F10)/(M10-F10))))),"-")
+
+### pattern (95 cells) e.g. ACTIONS!G10
+_xlfn.LET(_xlpm.dateAction,Table226[[#This Row],[DATE ACTION]],_xlpm.dateFin,Table226[[#This Row],[D.FIN]],_xlpm.DateDebut,Table226[[#This Row],[D.DEBUT]],_xlpm.Priorite,Table226[[#This Row],[PRIORITE]],_xlpm.Frequence,_xlfn.IFS(_xlpm.Priorite="Immédiate & Critique",1,_xlpm.Priorite="Immédiate & Elevée",2,_xlpm.Priorite="Immédiate & Modérée",4,_xlpm.Priorite="Immédiate & Faible",5,_xlpm.Priorite="Courte échéance & Critique",6,_xlpm.Priorite="Courte échéance & Elevée",7,_xlpm.Priorite="Courte échéance & Modérée",8,_xlpm.Priorite="Courte échéance & Faible",10,_xlpm.Priorite="Planifiable & Critique",15,_xlpm.Priorite="Planifiable & Elevée",20,_xlpm.Priorite="Planifiable & Modérée",25,_xlpm.Priorite="Planifiable & Faible",30,_xlpm.Priorite="Pas urgent & Faible",45,TRUE,7),_xlpm.BaseDate,IF(_xlpm.DateDebut+_xlpm.Frequence>TODAY(),_xlpm.DateDebut,_xlpm.dateAction),IF(OR(_xlpm.dateAction="",_xlpm.dateFin<>""),"-",WORKDAY.INTL(_xlpm.BaseDate,_xlpm.Frequence,7,[1]!Table9[FERIE])))
+
+### pattern (95 cells) e.g. ACTIONS!O10
+_xlfn.LET(_xlpm.Debut,Table226[[#This Row],[D.DEBUT]],_xlpm.Fin,Table226[[#This Row],[D.FIN]],IF(_xlpm.Fin<>"",_xlpm.Fin-_xlpm.Debut,TODAY()-_xlpm.Debut))
+
+### pattern (95 cells) e.g. ACTIONS!P10
+IF(OR(Table226[[#This Row],[D.FIN]]="",Table226[[#This Row],[D.FIN PREVUE]]=""),"-",IF(MIN(Table226[[#This Row],[D.FIN]],Table226[[#This Row],[D.FIN PREVUE]])<Table226[[#This Row],[D.DEBUT]],"Erreur",Table226[[#This Row],[D.FIN]]-Table226[[#This Row],[D.FIN PREVUE]]))
+
+### pattern (6 cells) e.g. BD!G50
++I49
+
+### pattern (13 cells) e.g. BD!L16
+Table31[[#This Row],[Urgence]]&" & "&Table31[[#This Row],[Importance]]
+
