@@ -237,3 +237,5 @@ Les **DÉCISIONS 1 à 12** sont **toutes tranchées** au 01/11/2026 :
 - **Décisions D72 → D75** : **D72** — le **dernier administrateur actif** ne peut pas perdre son rôle ni être désactivé (`409 DERNIER_ADMIN`) ; **D73** — un changement de rôle prend effet **immédiatement** à la requête suivante ; **D74** — la désactivation d'un employé **annule ses tâches non commencées** ; **D75** — un `ADMIN` ne peut pas modifier **son propre rôle** ni se désactiver (`403 AUTO_MODIFICATION_INTERDITE`).
 - **D74 précisée et confirmée** : seules les tâches où l'employé est **assigné** et dont le statut calculé est **`A faire`** sont annulées ; les tâches `Retard`, `En cours`, `Achevée` et `Suspendue` restent inchangées.
 - **Aucune règle métier, aucune route, aucun composant, aucun schéma Prisma, aucune migration, aucune base de production créés.**
+#   t o d o  
+ 
