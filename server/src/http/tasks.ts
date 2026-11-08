@@ -171,6 +171,8 @@ const schemaJustificationRetard = z.strictObject({
 })
 
 const schemaValidationRetard = z.strictObject({
+  dateFinReelleEstimee: schemaDate.nullable().optional(),
+  sansMotif: z.boolean().optional(),
   version: z.number().int().min(1),
 })
 
@@ -1463,6 +1465,13 @@ export function createTasksRouter(ctx: AppContext): Router {
       throw new ApiError(403, 'ACTION_NON_AUTORISEE', 'Vous ne pouvez pas justifier ce retard.')
     }
     verifierVersion(tache, corps.version)
+    if (tache.retardValideLe !== null) {
+      throw new ApiError(
+        409,
+        'RETARD_DEJA_VALIDE',
+        'Ce retard a déjà été validé : la justification n’est plus modifiable.',
+      )
+    }
     const calendrier = await chargerCalendrier(ctx)
     if (!retardDeTache(tache, calendrier).enRetard) {
       throw new ApiError(422, 'AUCUN_RETARD', 'Cette tâche n’est pas en retard.')
@@ -1523,20 +1532,59 @@ export function createTasksRouter(ctx: AppContext): Router {
       throw new ApiError(403, 'ACTION_NON_AUTORISEE', 'Vous ne pouvez pas valider ce retard.')
     }
     verifierVersion(tache, corps.version)
+    if (tache.retardValideLe !== null) {
+      throw new ApiError(409, 'RETARD_DEJA_VALIDE', 'Ce retard a déjà été validé.')
+    }
     const calendrier = await chargerCalendrier(ctx)
     if (!retardDeTache(tache, calendrier).enRetard) {
       throw new ApiError(422, 'AUCUN_RETARD', 'Cette tâche n’est pas en retard.')
     }
+
+    const motifPresent = tache.motifRetard !== null && tache.motifRetard.trim().length > 0
+    const sansMotif = !motifPresent && corps.sansMotif === true
+    if (!motifPresent && !sansMotif) {
+      throw new ApiError(
+        422,
+        'MOTIF_RETARD_ABSENT',
+        'Aucun motif de retard n’a été saisi. Confirmez explicitement la validation sans motif : la pénalité de 10 points sera conservée.',
+        [
+          {
+            champ: 'sansMotif',
+            code: 'MOTIF_RETARD_ABSENT',
+            message: 'Motif absent : confirmation explicite requise.',
+          },
+        ],
+      )
+    }
+
+    const dateFinReelleEstimee =
+      corps.dateFinReelleEstimee === undefined
+        ? tache.dateFinReelleEstimee === null
+          ? null
+          : utcDateToCalendarDate(tache.dateFinReelleEstimee)
+        : corps.dateFinReelleEstimee
+    if (dateFinReelleEstimee === null && !sansMotif) {
+      throw new ApiError(
+        422,
+        'DATE_ESTIMEE_REQUISE',
+        'La validation exige une date de fin estimée.',
+        [
+          {
+            champ: 'dateFinReelleEstimee',
+            code: 'DATE_ESTIMEE_REQUISE',
+            message: 'Date de fin estimée requise.',
+          },
+        ],
+      )
+    }
     if (
-      tache.motifRetard === null ||
-      tache.motifRetard.trim().length === 0 ||
-      tache.dateFinReelleEstimee === null
+      dateFinReelleEstimee !== null &&
+      compareCalendarDates(dateFinReelleEstimee, tache.dateDebut.toISOString().slice(0, 10)) < 0
     ) {
       throw new ApiError(
         422,
-        'JUSTIFICATION_INCOMPLETE',
-        'La validation exige un motif de retard et une date de fin estimée.',
-        [{ champ: 'motifRetard', code: 'JUSTIFICATION_INCOMPLETE', message: 'Justification incomplète.' }],
+        'DATE_INCOHERENTE',
+        'La date de fin estimée doit être postérieure ou égale à la date de début.',
       )
     }
 
@@ -1546,6 +1594,10 @@ export function createTasksRouter(ctx: AppContext): Router {
         data: {
           retardValideParId: auth.utilisateur.id,
           retardValideLe: calendrier.maintenant,
+          dateFinReelleEstimee:
+            dateFinReelleEstimee === null
+              ? tache.dateFinReelleEstimee
+              : calendarDateToUtcDate(dateFinReelleEstimee),
           dateMiseAJour: calendrier.maintenant,
           modifieLe: calendrier.maintenant,
           version: { increment: 1 },
@@ -1556,7 +1608,19 @@ export function createTasksRouter(ctx: AppContext): Router {
         typeOperation: 'VALIDATION_RETARD',
         entite: 'tache',
         entiteId: id,
-        donneesApres: { retardValideParId: auth.utilisateur.id } as Prisma.InputJsonValue,
+        donneesAvant: {
+          motifRetard: tache.motifRetard,
+          dateFinReelleEstimee:
+            tache.dateFinReelleEstimee === null
+              ? null
+              : utcDateToCalendarDate(tache.dateFinReelleEstimee),
+        } as Prisma.InputJsonValue,
+        donneesApres: {
+          retardValideParId: auth.utilisateur.id,
+          sansMotif,
+          motifRetard: tache.motifRetard,
+          dateFinReelleEstimee,
+        } as Prisma.InputJsonValue,
       })
     })
 

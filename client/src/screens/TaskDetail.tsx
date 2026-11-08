@@ -3,7 +3,7 @@ import { api, ApiError } from '../api'
 import { StatusBadge } from '../components/StatusBadge'
 import { Toast } from '../components/Toast'
 import type { Commentaire, EvenementHistorique, Me, Page, TacheDetail } from '../types'
-import { aujourdhuiIso, formatDate, formatDateTime } from '../utils/format'
+import { aujourdhuiIso, formatDate, formatDateTime, formatJours, joursEntre } from '../utils/format'
 
 interface TaskDetailProps {
   me: Me
@@ -29,6 +29,7 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
   const [motifRetard, setMotifRetard] = useState('')
   const [motifStatut, setMotifStatut] = useState('')
   const [dateFinEstimee, setDateFinEstimee] = useState(aujourdhuiIso())
+  const [sansMotifConfirmation, setSansMotifConfirmation] = useState(false)
   const [confirmationSuppression, setConfirmationSuppression] = useState(false)
 
   const charger = useCallback(async (): Promise<void> => {
@@ -42,6 +43,8 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
       setTache(detail)
       setProgression(detail.progressionManuelle === null ? '' : String(detail.progressionManuelle))
       setDateControle(detail.dateControle ?? aujourdhuiIso())
+      setDateFinEstimee(detail.dateFinReelleEstimee ?? aujourdhuiIso())
+      setSansMotifConfirmation(false)
       setCommentaires(listeCommentaires.elements)
       setHistorique(listeHistorique.elements)
       setErreur(null)
@@ -122,7 +125,21 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
     !me.droits.lectureSeule &&
     !tache.isSupplementaire &&
     tache.dateFin === null &&
+    tache.retardValideLe === null &&
     (estAdmin || estExecutant)
+  const motifRetardAbsent = tache.motifRetard === null || tache.motifRetard.trim().length === 0
+  // Durée affichée :
+  // - tâche clôturée : date de fin réelle − date de début (couvre la clôture anticipée) ;
+  // - tâche ouverte : échéance prévue − début + jours de retard.
+  // Une tâche quotidienne n'a pas de date de fin prévue : son échéance est sa date d'action.
+  const echeanceDuree = tache.dateFinPrevue ?? tache.dateAction
+  const joursRetardDuree = tache.retard.enRetard ? tache.retard.joursRetard : 0
+  const dureeJours =
+    tache.dureeGJours === null
+      ? null
+      : tache.dateFin !== null
+        ? joursEntre(tache.dateDebut, tache.dateFin)
+        : joursEntre(tache.dateDebut, echeanceDuree) + joursRetardDuree
   const peutValider =
     !me.droits.lectureSeule &&
     !tache.isSupplementaire &&
@@ -243,8 +260,16 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
           </dd>
           <dt>Durée G. / E.</dt>
           <dd>
-            {tache.dureeGJours === null ? '—' : `${String(tache.dureeGJours)} j`} /{' '}
-            {tache.dureeEJours === null ? '—' : `${String(tache.dureeEJours)} j`}
+            {dureeJours === null ? (
+              '—'
+            ) : (
+              <>
+                {formatJours(dureeJours)}
+                {joursRetardDuree > 0 && (
+                  <> (dont {formatJours(joursRetardDuree)} de retard)</>
+                )}
+              </>
+            )}
             {tache.anomalieDuree && <span className="alerte"> · incohérence</span>}
           </dd>
           <dt>Créée par</dt>
@@ -288,7 +313,16 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
             <p>Fin estimée : {formatDate(tache.dateFinReelleEstimee)}</p>
           )}
           {tache.retardValideLe !== null ? (
-            <p className="message message--succes">Retard validé le {formatDateTime(tache.retardValideLe)}.</p>
+            <div>
+              <p className="message message--succes">
+                Retard validé le {formatDateTime(tache.retardValideLe)}.
+              </p>
+              {motifRetardAbsent && (
+                <p className="avertissement" role="status">
+                  Retard validé sans motif : la pénalité de 10 points est conservée.
+                </p>
+              )}
+            </div>
           ) : (
             tache.retard.enRetard && <p className="avertissement">Validation du retard en attente.</p>
           )}
@@ -303,13 +337,6 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
                 onChange={(evenement) => setMotifRetard(evenement.target.value)}
                 placeholder="Expliquez la cause du retard"
               />
-              <label htmlFor="dateFinEstimee">Nouvelle date de fin estimée</label>
-              <input
-                id="dateFinEstimee"
-                type="date"
-                value={dateFinEstimee}
-                onChange={(evenement) => setDateFinEstimee(evenement.target.value)}
-              />
               <button
                 type="button"
                 className="bouton"
@@ -321,8 +348,6 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
                         method: 'PATCH',
                         body: JSON.stringify({
                           motifRetard,
-                          dateFinReelleEstimee:
-                            dateFinEstimee.trim().length === 0 ? null : dateFinEstimee,
                           version: tache.version,
                         }),
                       }),
@@ -336,23 +361,88 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
           )}
 
           {peutValider && (
-            <button
-              type="button"
-              className="bouton bouton--principal"
-              disabled={enCours}
-              onClick={() =>
-                void executer(
-                  () =>
-                    api(`/tasks/${id}/retard/validation`, {
-                      method: 'PATCH',
-                      body: JSON.stringify({ version: tache.version }),
-                    }),
-                  'Retard validé.',
+            <div className="champ-ligne">
+              <label htmlFor="dateFinEstimee">Date de fin estimée</label>
+              <input
+                id="dateFinEstimee"
+                type="date"
+                value={dateFinEstimee}
+                onChange={(evenement) => setDateFinEstimee(evenement.target.value)}
+              />
+              {motifRetardAbsent && (
+                <p className="avertissement" role="alert">
+                  Aucun motif de retard n’a été saisi par l’exécutant. Valider sans motif clôture le
+                  workflow mais conserve la pénalité de 10 points.
+                </p>
+              )}
+              {motifRetardAbsent ? (
+                sansMotifConfirmation ? (
+                  <div className="boutons-ligne">
+                    <button
+                      type="button"
+                      className="bouton bouton--principal"
+                      disabled={enCours}
+                      onClick={() =>
+                        void executer(
+                          () =>
+                            api(`/tasks/${id}/retard/validation`, {
+                              method: 'PATCH',
+                              body: JSON.stringify({
+                                dateFinReelleEstimee:
+                                  dateFinEstimee.trim().length === 0 ? null : dateFinEstimee,
+                                sansMotif: true,
+                                version: tache.version,
+                              }),
+                            }),
+                          'Retard validé sans motif : pénalité de 10 points conservée.',
+                        )
+                      }
+                    >
+                      Confirmer la validation sans motif
+                    </button>
+                    <button
+                      type="button"
+                      className="bouton"
+                      disabled={enCours}
+                      onClick={() => setSansMotifConfirmation(false)}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    className="bouton bouton--principal"
+                    disabled={enCours}
+                    onClick={() => setSansMotifConfirmation(true)}
+                  >
+                    Valider le retard
+                  </button>
                 )
-              }
-            >
-              Valider le retard
-            </button>
+              ) : (
+                <button
+                  type="button"
+                  className="bouton bouton--principal"
+                  disabled={enCours}
+                  onClick={() =>
+                    void executer(
+                      () =>
+                        api(`/tasks/${id}/retard/validation`, {
+                          method: 'PATCH',
+                          body: JSON.stringify({
+                            dateFinReelleEstimee:
+                              dateFinEstimee.trim().length === 0 ? null : dateFinEstimee,
+                            version: tache.version,
+                          }),
+                        }),
+                      'Retard validé.',
+                    )
+                  }
+                >
+                  Valider le retard
+                </button>
+              )}
+            </div>
           )}
         </section>
       )}
@@ -512,6 +602,12 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
                   placeholder="Obligatoire uniquement en cas de retard"
                 />
               </div>
+              {tache.retard.enRetard && tache.retardValideLe === null && (
+                <p className="avertissement" role="status">
+                  Le retard n’est pas encore validé : validez-le dans le panneau « Retard » ci-dessus
+                  (ou validez sans motif, avec conservation de la pénalité) avant de clôturer.
+                </p>
+              )}
               <button
                 type="button"
                 className="bouton bouton--principal"

@@ -449,6 +449,7 @@ Le menu est construit **à partir de l'objet `Me`** renvoyé par `GET /me`. Aucu
 | **Priorité** | Urgence, importance, **score**, **fréquence de rappel**, libellé de priorité, action à prendre (déduite de la priorité) |
 | **Avancement** | Progression (manuelle ou calculée), **durées G / E**, anomalie de durée |
 | **Clôture** | Motif de non-achèvement (si présent), date et heure de clôture |
+| **Retard** | Jours de retard, motif saisi par l'exécutant, date de fin estimée, état de validation ; panneau de justification (exécutant) et de validation (admin) — **D82** |
 | **Commentaires** | Fil chronologique, auteur, date, ajout d'un commentaire |
 | **Historique** | Événements réduits : type, auteur, date, champs modifiés (D53) |
 
@@ -462,6 +463,8 @@ Le menu est construit **à partir de l'objet `Me`** renvoyé par `GET /me`. Aucu
 | Historique | `GET /tasks/:id/history` |
 | Statut manuel | `PATCH /tasks/:id/status` |
 | Progression | `PATCH /tasks/:id/progress` |
+| Justification du retard | `PATCH /tasks/:id/retard` |
+| Validation du retard | `PATCH /tasks/:id/retard/validation` |
 | Clôture | `POST /tasks/:id/close` |
 | Modification | `PATCH /tasks/:id` |
 | Suppression | `DELETE /tasks/:id` |
@@ -471,7 +474,9 @@ Le menu est construit **à partir de l'objet `Me`** renvoyé par `GET /me`. Aucu
 | Action | Visible si | Effet / confirmation |
 |---|---|---|
 | **Modifier** | Droit d'écriture sur la tâche | Ouvre `/taches/:id/modifier` |
-| **Clôturer** | Droit d'écriture, tâche non clôturée | Modale de clôture ; **motif obligatoire si tardive** |
+| **Clôturer** | Droit d'écriture, tâche non clôturée | Modale de clôture ; **motif obligatoire si tardive** ; le **retard doit être validé** au préalable (D82) |
+| **Justifier le retard** | Exécutant (assigné ou pilote employé) ou admin, tâche non clôturée, retard non validé | Saisie du **motif** ; le formulaire disparaît après validation |
+| **Valider le retard** | Admin, créateur ou responsable habilité, retard non validé | Saisie de la **date de fin estimée** ; si le motif est absent, alerte et confirmation explicite « Valider sans motif — pénalité conservée » |
 | **Annuler** | Droit d'écriture (y compris sur une tâche clôturée : le statut manuel reste prioritaire — CA-12) | Confirmation « La tâche sera marquée Annulée et ne comptera plus comme à traiter. » |
 | **Suspendre** | Droit d'écriture (même condition) | Confirmation |
 | **Reprendre** | Tâche `SUSPENDUE` | Retire le statut manuel (`statutManuel = null`) |
@@ -483,10 +488,13 @@ Le menu est construit **à partir de l'objet `Me`** renvoyé par `GET /me`. Aucu
 
 - **Aucune réouverture** n'est proposée (D51) : une tâche `Achevée` n'affiche **pas** « Clôturer » et ne peut pas revenir à un statut calculé antérieur. Le statut **manuel** `Annulée` / `Suspendue` reste toutefois possible, car il est prioritaire sur le calcul (CA-12).
 - `Annulée` et `Suspendue` sont **manuels** et **prioritaires** : ils masquent le calcul de retard (D3). L'écran affiche le statut tel que renvoyé.
+- Le panneau **Retard** suit le workflow **D82** : l'exécutant saisit le motif ; l'admin valide et fixe la date de fin estimée ; une validation **sans motif** demande une confirmation explicite et affiche « Retard validé sans motif : la pénalité de 10 points est conservée ».
+- La section **Clôturer** avertit si le retard n'est pas encore validé ; le serveur refuse alors la clôture (`422 RETARD_NON_VALIDE`).
 - Le **motif** est visible par **tous les ayants droit**, `CONSULTANT` compris (D52).
 - L'historique affiché est **réduit** : jamais de valeurs avant / après pour un non-admin (D53).
 - `anomalieDuree = true` affiche un **avertissement rouge** : « La date de fin précède la date de début. » (RM-06).
 - Les libellés `Durée G.` / `Durée E.` sont affichés tels quels avec une infobulle « Signification à confirmer » (**D61**) ; la signification métier reste ouverte (**P1**).
+- La valeur affichée est `X jours (dont Y jours de retard)` : pour une tâche **clôturée**, `X = date de fin réelle − date de début` (y compris en cas de clôture anticipée) ; pour une tâche **ouverte**, `X = échéance prévue − date de début + Y` (échéance = date d'action pour une tâche quotidienne sans date de fin prévue). La parenthèse n'apparaît que si `Y > 0`.
 
 ---
 

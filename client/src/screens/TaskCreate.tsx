@@ -460,7 +460,7 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
 
           {acteur === 'GD_TRADING' ? (
             <>
-              <label htmlFor="piloteEmployeId">Pilote</label>
+              <label htmlFor="piloteEmployeId">Piloté par</label>
               <select
                 id="piloteEmployeId"
                 value={piloteEmployeId}
@@ -489,7 +489,7 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
 
               {piloteType === 'EMPLOYE' ? (
                 <>
-                  <label htmlFor="piloteEmployeId">Pilote employé</label>
+                  <label htmlFor="piloteEmployeId">Piloté par (employé)</label>
                   <select
                     id="piloteEmployeId"
                     value={piloteEmployeId}
@@ -504,7 +504,7 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
                 </>
               ) : (
                 <>
-                  <label htmlFor="pilotePartenaireId">Pilote partenaire</label>
+                  <label htmlFor="pilotePartenaireId">Piloté par (partenaire)</label>
                   <select
                     id="pilotePartenaireId"
                     value={pilotePartenaireId}

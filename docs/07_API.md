@@ -372,6 +372,10 @@ Un **module unique** applique les décisions ; aucun contrôle n'est dupliqué d
 | `TACHE_QUOTIDIENNE_HORS_DELAI` | `422` | Création après 16h30 (D32) |
 | `TACHE_QUOTIDIENNE_JOUR_NON_OUVRE` | `422` | Création un vendredi, samedi ou jour férié (D32) |
 | `MOTIF_OBLIGATOIRE` | `422` | Clôture tardive sans motif (D15) |
+| `MOTIF_RETARD_ABSENT` | `422` | Validation du retard sans motif ni confirmation `sansMotif` (D82) |
+| `DATE_ESTIMEE_REQUISE` | `422` | Validation avec motif sans date de fin estimée (D82) |
+| `AUCUN_RETARD` | `422` | Justification ou validation demandée sur une tâche qui n'est pas en retard |
+| `RETARD_DEJA_VALIDE` | `409` | Justification ou validation d'un retard déjà validé (D82) |
 | `PROGRESSION_INVALIDE` | `422` | Valeur hors 0-100 ou non entière |
 | `TACHE_DEJA_CLOTUREE` | `409` | Clôture d'une tâche déjà clôturée |
 | `VERSION_OBSOLETE` | `409` | Écriture concurrente détectée |
@@ -838,6 +842,50 @@ Positionne ou retire le **statut manuel** (D3, EF-52).
 
 **Réponse `200`** : `TacheDetail`.
 
+#### `PATCH /tasks/:id/retard`
+
+Enregistre le **motif de retard** saisi par l'exécutant (**D82**).
+
+```json
+{ "motifRetard": "Fournisseur en rupture", "dateFinReelleEstimee": "2026-11-12", "version": 3 }
+```
+
+- `motifRetard` : **obligatoire**, non vide après `trim`, 2 000 caractères maximum.
+- `dateFinReelleEstimee` (facultatif) : date prévisionnelle de fin ; omise, la valeur existante est conservée ; `null` l'efface.
+- Autorisé à l'**exécutant** (assigné ou pilote employé) et à l'`ADMIN`, sur une tâche **non clôturée** et **en retard**.
+- Refusé après validation : `409 RETARD_DEJA_VALIDE`.
+- Audit : `JUSTIFICATION_RETARD` (avant/après motif et date estimée).
+
+**Réponse `200`** : `TacheDetail`.
+
+| Code | Erreur |
+|---|---|
+| `403` / `404` | Périmètre |
+| `409` | `RETARD_DEJA_VALIDE`, `VERSION_OBSOLETE` |
+| `422` | `AUCUN_RETARD`, `DATE_INCOHERENTE` |
+
+#### `PATCH /tasks/:id/retard/validation`
+
+Valide le retard et fixe la **date de fin estimée** (**D82**).
+
+```json
+{ "dateFinReelleEstimee": "2026-11-12", "sansMotif": false, "version": 4 }
+```
+
+- `dateFinReelleEstimee` (facultatif) : requise **si un motif existe** (`422 DATE_ESTIMEE_REQUISE` sinon) ; omise, la valeur existante est conservée.
+- `sansMotif` (facultatif, `false` par défaut) : si **aucun motif** n'a été saisi, la validation est refusée (`422 MOTIF_RETARD_ABSENT`) tant que `sansMotif` n'est pas explicitement `true`.
+- Une validation **sans motif** est acceptée avec `sansMotif: true` et **conserve la pénalité de 10 points** ; une validation **avec** motif la retire.
+- Refusée si le retard est déjà validé : `409 RETARD_DEJA_VALIDE`.
+- Audit : `VALIDATION_RETARD` (validateur, `sansMotif`, motif, date estimée avant/après).
+
+**Réponse `200`** : `TacheDetail`.
+
+| Code | Erreur |
+|---|---|
+| `403` / `404` | Périmètre |
+| `409` | `RETARD_DEJA_VALIDE`, `VERSION_OBSOLETE` |
+| `422` | `AUCUN_RETARD`, `MOTIF_RETARD_ABSENT`, `DATE_ESTIMEE_REQUISE`, `DATE_INCOHERENTE` |
+
 #### `POST /tasks/:id/close`
 
 ```json
@@ -854,6 +902,7 @@ Positionne ou retire le **statut manuel** (D3, EF-52).
 |---|---|---|
 | Clôture **avant ou à** l'échéance | Facultatif | `dateFin` enregistrée, statut `Achevée` |
 | Clôture **après** l'échéance | **Obligatoire, non vide** | Sans motif : `422 MOTIF_OBLIGATOIRE`, aucune écriture |
+| Clôture tardive dont le retard n'est pas **validé** | — | `422 RETARD_NON_VALIDE`, aucune écriture (**D82**) |
 | Tâche déjà clôturée | — | `409 TACHE_DEJA_CLOTUREE` |
 | `dateFin < dateDebut` | — | `422 DATE_INCOHERENTE` |
 
@@ -873,7 +922,7 @@ Positionne ou retire le **statut manuel** (D3, EF-52).
 |---|---|
 | `403` / `404` | Périmètre |
 | `409` | `TACHE_DEJA_CLOTUREE`, `VERSION_OBSOLETE` |
-| `422` | `MOTIF_OBLIGATOIRE`, `DATE_INCOHERENTE` |
+| `422` | `MOTIF_OBLIGATOIRE`, `DATE_INCOHERENTE`, `RETARD_NON_VALIDE` |
 
 > **Aucune réouverture** n'est exposée en V1 (**D51**). Une clôture erronée ne peut pas être annulée par l'application ; aucune route ne l'autorise.
 

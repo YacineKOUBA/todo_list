@@ -94,6 +94,26 @@ describe('retard et score', () => {
     ).toBe(80)
   })
 
+  it('conserve le malus de 10 points quand le retard est validé sans motif', () => {
+    const valideSansMotif = { ...commun, retardValideLe: new Date('2026-11-05T10:00:00.000Z') }
+    const retard = calculerRetard(valideSansMotif)
+    expect(retard.justificationRequise).toBe(true)
+    expect(retard.validationRequise).toBe(false)
+    expect(calculerScoreTache({ ...valideSansMotif, priorite: 'P1_CRITIQUE' })?.valeur).toBe(55)
+  })
+
+  it('retire le malus de 10 points quand le retard est justifié et validé', () => {
+    const justifieEtValide = {
+      ...commun,
+      motifRetard: 'Rupture d’approvisionnement',
+      retardValideLe: new Date('2026-11-05T10:00:00.000Z'),
+    }
+    const retard = calculerRetard(justifieEtValide)
+    expect(retard.justificationRequise).toBe(false)
+    expect(retard.validationRequise).toBe(false)
+    expect(calculerScoreTache({ ...justifieEtValide, priorite: 'P1_CRITIQUE' })?.valeur).toBe(65)
+  })
+
   it('ignore les tâches supplémentaires et agrège par poids', () => {
     expect(calculerScoreTache({ ...commun, isSupplementaire: true, priorite: 'P1_CRITIQUE' })).toBeNull()
     expect(

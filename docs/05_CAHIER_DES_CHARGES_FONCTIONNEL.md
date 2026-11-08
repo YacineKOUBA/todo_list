@@ -164,6 +164,14 @@ Les **quatre zones grises G1 à G4** laissées ouvertes par l'ÉTAPE 10 sont tra
 
 **Effet sur les points ouverts** : aucun point ouvert n'est refermé ; **D47** est maintenue (partenaire pilote réservé à l'`ADMIN`).
 
+### 1.11 Décision rendue le 08/11/2026 (workflow de validation du retard)
+
+| # | Point d'origine | Décision retenue | Conséquence ici |
+|---|---|---|---|
+| **D82** | Retard : qui justifie, qui valide, quelle date de fin estimée ? | L'**exécutant** (assigné ou pilote employé) saisit le **motif de retard** ; l'**administrateur** (ou le créateur / responsable habilité) **valide** le retard et fixe la **date de fin estimée**. Si le motif est absent, la validation est **refusée** tant qu'elle n'est pas **explicitement confirmée sans motif** (`sansMotif: true`). Une validation sans motif **conserve la pénalité de 10 points** ; elle n'est jamais réajoutée au score. Après validation, le motif n'est **plus modifiable**. | §5.7, EF-54 bis, EF-52 → EF-54 ; `PATCH /tasks/:id/retard`, `PATCH /tasks/:id/retard/validation` |
+
+**Effet sur les points ouverts** : aucun point ouvert n'est refermé ; D15 et D45 restent inchangées.
+
 ---
 
 ## 2. Vocabulaire et définitions
@@ -389,6 +397,7 @@ Les **quatre zones grises G1 à G4** laissées ouvertes par l'ÉTAPE 10 sont tra
 | **EF-52** | Un utilisateur habilité peut positionner le statut manuel `Annulée` ou `Suspendue`, et revenir à l'état calculé. | ✅ | D3 |
 | **EF-53** | Un utilisateur habilité peut **clôturer** une tâche en renseignant `dateFin`. | ✅ | RE-07 |
 | **EF-54** | Une **clôture tardive** exige un **motif de non-achèvement** non vide ; le serveur refuse la clôture sans motif. | ✅ | D15 |
+| **EF-54 bis** | Le **retard** est justifié par l'exécutant puis **validé** par l'admin, qui fixe la **date de fin estimée**. Une validation **sans motif** exige une confirmation explicite et **conserve la pénalité de 10 points**. | ✅ | D82 |
 | **EF-55** | Le **commentaire** est libre, facultatif et **sans effet** sur le statut. | ✅ | D3, RE-08 |
 | **EF-56** | La **progression manuelle** est un pourcentage entier de 0 à 100 ; elle est prioritaire sur le calcul temporel. | ✅ | D4 |
 | **EF-57** | En l'absence de progression manuelle, la progression est **calculée** à partir des dates. | ✅ | D4 |
@@ -550,12 +559,23 @@ DATE RAPPEL = ajouterJoursOuvres(BASE, fréquence, week-end, fériés)
 
 **Interprétation** : `DUREE E.` positive = clôture en retard ; négative = clôture en avance ; zéro = à l'heure. Les sigles **G** et **E** ne sont pas explicités par une décision : **P1**.
 
-### 5.7 RM-07 — Clôture tardive et motif
+### 5.7 RM-07 — Retard, justification, validation et clôture tardive
+
+**Workflow (D82)** :
+
+1. à l'échéance dépassée, le statut calculé devient `Retard` et l'interface signale « Motif de retard requis » ;
+2. l'**exécutant** (assigné ou pilote employé) saisit le **motif de retard** ; la justification n'est plus modifiable après validation ;
+3. l'**administrateur** — ou le créateur / responsable habilité — **valide le retard** et renseigne la **date de fin estimée** (obligatoire lorsqu'un motif existe) ;
+4. si aucun motif n'est présent, le serveur **refuse** la validation (`422 MOTIF_RETARD_ABSENT`) ; l'interface propose alors une **confirmation explicite** « Valider sans motif — pénalité conservée » ;
+5. une validation **avec** motif retire le malus de 10 points ; une validation **sans** motif le **conserve** ;
+6. la **clôture** d'une tâche tardive reste refusée tant que le retard n'est pas validé (`422 RETARD_NON_VALIDE`) et exige un **motif de non-achèvement** (`422 MOTIF_OBLIGATOIRE`).
 
 | Situation | Motif exigé ? | Effet |
 |---|---|---|
 | Clôture **avant ou à** l'échéance | Non | `dateFin` enregistrée ; statut `Achevée` |
 | Clôture **après** l'échéance | **Oui, non vide** | Sans motif : **refus serveur** ; avec motif : clôture acceptée et motif conservé |
+| Validation du retard **avec** motif | Oui | Date de fin estimée requise ; malus de 10 points **retiré** |
+| Validation du retard **sans** motif | Non, mais **confirmation explicite** | Date de fin estimée facultative ; malus de 10 points **conservé** |
 | Commentaire | Non | Texte libre, aucun effet sur le statut |
 | Annulation / suspension | Non | Ne renseigne pas `dateFin` ; ce n'est pas une clôture |
 
@@ -564,7 +584,8 @@ DATE RAPPEL = ajouterJoursOuvres(BASE, fréquence, week-end, fériés)
 - le contrôle est **serveur** : l'interface ne peut pas contourner l'obligation ;
 - le motif est **distinct** du commentaire (D15) ;
 - le motif est visible par l'employé, son responsable et l'admin ;
-- la **taille minimale** et l'**historique** des motifs sont fixés par **D45** : non vide après `trim`, maximum technique 2 000 caractères, aucune longueur minimale au-delà.
+- la **taille minimale** et l'**historique** des motifs sont fixés par **D45** : non vide après `trim`, maximum technique 2 000 caractères, aucune longueur minimale au-delà ;
+- la validation et la date estimée sont **tracées** dans le journal d'audit (`VALIDATION_RETARD`, avec `sansMotif`) — **D82**.
 
 > **Lecture proposée** : l'**annulation** et la **suspension** ne sont pas des clôtures ; elles ne renseignent pas `dateFin` et n'exigent donc pas de motif. Cette distinction découle de D3 et D15, mais n'est pas écrite mot pour mot dans une décision : elle est **soumise à validation avec le présent document**.
 

@@ -51,3 +51,16 @@ export function dateLongueFr(): string {
     year: 'numeric',
   }).format(new Date())
 }
+
+/** Nombre de jours calendaires entre deux dates ISO (AAAA-MM-JJ). */
+export function joursEntre(debut: string, fin: string): number {
+  const debutMs = Date.parse(`${debut.slice(0, 10)}T00:00:00.000Z`)
+  const finMs = Date.parse(`${fin.slice(0, 10)}T00:00:00.000Z`)
+  if (Number.isNaN(debutMs) || Number.isNaN(finMs)) return 0
+  return Math.round((finMs - debutMs) / 86_400_000)
+}
+
+/** « 0 jour », « 1 jour », « 2 jours ». */
+export function formatJours(nombre: number): string {
+  return `${String(nombre)} jour${nombre > 1 ? 's' : ''}`
+}
