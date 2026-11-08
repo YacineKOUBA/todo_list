@@ -238,4 +238,5 @@ Les **DÉCISIONS 1 à 12** sont **toutes tranchées** au 01/11/2026 :
 - **D74 précisée et confirmée** : seules les tâches où l'employé est **assigné** et dont le statut calculé est **`A faire`** sont annulées ; les tâches `Retard`, `En cours`, `Achevée` et `Suspendue` restent inchangées.
 - **Aucune règle métier, aucune route, aucun composant, aucun schéma Prisma, aucune migration, aucune base de production créés.**
 #   t o d o  
+ #   t o d o  
  
