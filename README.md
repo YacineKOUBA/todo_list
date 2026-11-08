@@ -239,4 +239,5 @@ Les **DÉCISIONS 1 à 12** sont **toutes tranchées** au 01/11/2026 :
 - **Aucune règle métier, aucune route, aucun composant, aucun schéma Prisma, aucune migration, aucune base de production créés.**
 #   t o d o  
  #   t o d o  
+ #   t o d o _ l i s t  
  
