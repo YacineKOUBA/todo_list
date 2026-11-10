@@ -1,9 +1,14 @@
 /**
  * Jeu de démonstration — base `gd_trading_demo` UNIQUEMENT.
  *
- * Ce script n'est pas le seed de référence : il ajoute des données fictives
- * pour montrer l'interface au directeur. Il refuse de s'exécuter si l'URL de
- * base ne contient pas `gd_trading_demo`, et refuse d'écraser des données.
+ * Ce script n'est pas le seed de référence : il crée un scénario fictif
+ * couvrant les cas métier majeurs (statuts, priorités, dates passées /
+ * aujourd'hui / futures, natures, acteur partenaire, périmètres par rôle).
+ *
+ * Il refuse de s'exécuter si l'URL de base ne contient pas `gd_trading_demo`,
+ * et refuse d'écraser des données existantes. Pour recharger le scénario :
+ * réinitialiser la base de démonstration, rejouer le seed de référence puis
+ * `npm run demo:seed`.
  *
  * Aucun compte nominatif réel n'est créé ici (D70) : le compte ADMIN de
  * production reste à créer par `npm run admin:create`.
@@ -69,29 +74,62 @@ interface TacheDemo {
   commentaire?: string
 }
 
+/**
+ * Scénario fictif ancré sur le jour courant (décalages en jours).
+ *
+ * Couverture :
+ *  - statuts calculés : à faire, en cours, retard, achevée, achevée en retard,
+ *    suspendue, annulée ;
+ *  - priorités : P1 (immédiat/court + critique/élevé), P2, P3, P4 ;
+ *  - dates : aujourd'hui par `dateAction`, `dateDebut` et `dateFinPrevue`
+ *    (les trois champs donnent des ensembles différents pour « Date cible »),
+ *    ainsi que passé et futur ;
+ *  - nature : tâches quotidiennes et tâches « autre » ;
+ *  - acteur : GD Trading et partenaire externe ;
+ *  - périmètres : chaque service et chaque compte de démo a des tâches.
+ */
 const TACHES: readonly TacheDemo[] = [
-  { libelle: 'Relancer les factures fournisseurs en attente', nature: 'AUTRE', element: 'PROCESS', assigneA: 'a.mansouri', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Critique', action: -8, debut: -8, finPrevue: -2, commentaire: 'Deux relances déjà envoyées, sans réponse.' },
-  { libelle: 'Contrôler les déclarations douanières du mois', nature: 'AUTRE', element: 'PROCESS', assigneA: 'k.cherif', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: -5, debut: -5, finPrevue: -1 },
-  { libelle: 'Mettre à jour le tableau de bord logistique', nature: 'AUTRE', element: 'REPORTING', assigneA: 'y.bouzid', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: -3, debut: -3, finPrevue: 3, progression: 45 },
-  { libelle: 'Valider les prix de la nouvelle gamme', nature: 'AUTRE', element: 'PERFORMANCE', assigneA: 'l.ferhat', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Elevée', action: -2, debut: -2, finPrevue: 1 },
-  { libelle: 'Préparer le comité de direction', nature: 'AUTRE', element: 'GOUVERNANCE', assigneA: 'admin', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Critique', action: -1, debut: -1, finPrevue: 4 },
-  { libelle: 'Clôturer les comptes du mois précédent', nature: 'AUTRE', element: 'PROCESS', assigneA: 'n.haddad', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Elevée', action: -10, debut: -10, finPrevue: -4, fin: -4 },
-  { libelle: 'Archiver les contrats fournisseurs 2025', nature: 'AUTRE', element: 'PROCESS', assigneA: 'a.mansouri', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Faible', action: -20, debut: -20, finPrevue: -12, fin: -11, motif: 'Retard d’archivage dû à une pièce manquante.' },
-  { libelle: 'Organiser l’entretien annuel de l’équipe', nature: 'AUTRE', element: 'EQUIPE', assigneA: 's.benali', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Modérée', action: 2, debut: 2, finPrevue: 12 },
-  { libelle: 'Réviser la procédure de validation des achats', nature: 'AUTRE', element: 'PROCESS', assigneA: 'k.cherif', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: 1, debut: 1, finPrevue: 9 },
-  { libelle: 'Former l’équipe au nouvel outil de suivi', nature: 'AUTRE', element: 'EQUIPE', assigneA: 'r.khelifi', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Modérée', action: 3, debut: 3, finPrevue: 15 },
-  { libelle: 'Auditer la qualité des données clients', nature: 'AUTRE', element: 'PERFORMANCE', assigneA: 'o.taleb', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Critique', action: 5, debut: 5, finPrevue: 20 },
-  { libelle: 'Négocier le renouvellement du contrat transport', nature: 'AUTRE', element: 'RESSOURCES / OUTILS', assigneAPartenaire: true, piloteEmploye: 'k.cherif', acteur: 'PARTENAIRE', urgence: 'Courte échéance', importance: 'Critique', action: -1, debut: -1, finPrevue: 6 },
-  { libelle: 'Mettre à jour le plan de trésorerie', nature: 'AUTRE', element: 'REPORTING', assigneA: 'm.saidi', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Critique', action: 0, debut: 0, finPrevue: 2 },
-  { libelle: 'Vérifier les écarts de stock entrepôt', nature: 'AUTRE', element: 'PERFORMANCE', assigneA: 'y.bouzid', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: -4, debut: -4, finPrevue: 2, statutManuel: 'SUSPENDUE' },
-  { libelle: 'Réceptionner le lot de matières premières', nature: 'AUTRE', element: 'RESSOURCES / OUTILS', assigneA: 'y.bouzid', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Faible', action: -6, debut: -6, finPrevue: 4, statutManuel: 'ANNULEE' },
+  // --- Aujourd'hui : couverture des trois champs de « Date cible » --------
+  { libelle: 'Mettre à jour le plan de trésorerie', nature: 'AUTRE', element: 'REPORTING', assigneA: 'm.saidi', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Critique', action: 0, debut: 1, finPrevue: 3, progression: 35 },
+  { libelle: 'Préparer le comité de direction', nature: 'AUTRE', element: 'GOUVERNANCE', assigneA: 'admin', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Elevée', action: -1, debut: 0, finPrevue: 4 },
+  { libelle: 'Valider les prix de la nouvelle gamme', nature: 'AUTRE', element: 'PERFORMANCE', assigneA: 'l.ferhat', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: -4, debut: -4, finPrevue: 0 },
+  { libelle: 'Contrôler les écarts de stock entrepôt', nature: 'AUTRE', element: 'PERFORMANCE', assigneA: 'y.bouzid', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Modérée', action: 0, debut: 0, finPrevue: 0, progression: 50 },
   { libelle: 'Relancer les impayés de plus de 60 jours', nature: 'QUOTIDIENNE', element: 'PROCESS', assigneA: 'a.mansouri', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Critique', action: 0 },
   { libelle: 'Contrôler les encaissements de la veille', nature: 'QUOTIDIENNE', element: 'PROCESS', assigneA: 'n.haddad', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: 0 },
-  { libelle: 'Mettre à jour les indicateurs du jour', nature: 'QUOTIDIENNE', element: 'REPORTING', assigneA: 'admin', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: 0 },
+  { libelle: 'Mettre à jour les indicateurs du jour', nature: 'QUOTIDIENNE', element: 'REPORTING', assigneA: 'admin', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: 0, progression: 65 },
   { libelle: 'Suivre les expéditions en cours', nature: 'QUOTIDIENNE', element: 'REPORTING', assigneA: 'y.bouzid', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Modérée', action: 0 },
-  { libelle: 'Pointer les anomalies qualité de la production', nature: 'QUOTIDIENNE', element: 'PERFORMANCE', assigneA: 'l.ferhat', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: 0 },
-  { libelle: 'Préparer les éléments de reporting hebdomadaire', nature: 'AUTRE', element: 'REPORTING', assigneA: 's.benali', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: 1, debut: 1, finPrevue: 5 },
+  { libelle: 'Négocier le renouvellement du contrat transport', nature: 'AUTRE', element: 'RESSOURCES / OUTILS', assigneAPartenaire: true, piloteEmploye: 'k.cherif', acteur: 'PARTENAIRE', urgence: 'Courte échéance', importance: 'Critique', action: 0, debut: 0, finPrevue: 6 },
+  { libelle: 'Consolider les budgets des BU', nature: 'AUTRE', element: 'REPORTING', assigneA: 's.benali', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Critique', action: 0, debut: 0, finPrevue: 7 },
+
+  // --- Retards ------------------------------------------------------------
+  { libelle: 'Relancer les factures fournisseurs en attente', nature: 'AUTRE', element: 'PROCESS', assigneA: 'a.mansouri', acteur: 'GD_TRADING', urgence: 'Immédiate', importance: 'Critique', action: -8, debut: -8, finPrevue: -2, commentaire: 'Deux relances déjà envoyées, sans réponse.' },
+  { libelle: 'Contrôler les déclarations douanières du mois', nature: 'AUTRE', element: 'PROCESS', assigneA: 'k.cherif', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: -5, debut: -5, finPrevue: -1 },
+  { libelle: 'Mettre à jour le tableau de bord logistique', nature: 'AUTRE', element: 'REPORTING', assigneA: 'y.bouzid', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: -3, debut: -3, finPrevue: -3, progression: 45 },
+  { libelle: 'Pointer les anomalies qualité de la production', nature: 'QUOTIDIENNE', element: 'PERFORMANCE', assigneA: 'l.ferhat', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: -1 },
+  { libelle: 'Renouveler la certification transport', nature: 'AUTRE', element: 'RESSOURCES / OUTILS', assigneAPartenaire: true, piloteEmploye: 'y.bouzid', acteur: 'PARTENAIRE', urgence: 'Planifiable', importance: 'Elevée', action: -2, debut: -2, finPrevue: -1 },
+
+  // --- Statuts manuels ----------------------------------------------------
+  { libelle: 'Réceptionner le lot de matières premières', nature: 'AUTRE', element: 'RESSOURCES / OUTILS', assigneA: 'y.bouzid', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Faible', action: -6, debut: -6, finPrevue: 4, statutManuel: 'ANNULEE' },
+  { libelle: 'Auditer les inventaires tournants', nature: 'AUTRE', element: 'PERFORMANCE', assigneA: 'm.saidi', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Modérée', action: -2, debut: -2, finPrevue: 5, statutManuel: 'SUSPENDUE' },
+
+  // --- Tâches achevées (à l'heure, en avance, en retard) ------------------
+  { libelle: 'Clôturer les comptes du mois précédent', nature: 'AUTRE', element: 'PROCESS', assigneA: 'n.haddad', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Elevée', action: -10, debut: -10, finPrevue: -4, fin: -4 },
+  { libelle: 'Former l’équipe au nouvel outil de suivi', nature: 'AUTRE', element: 'EQUIPE', assigneA: 'r.khelifi', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Modérée', action: -25, debut: -25, finPrevue: -10, fin: -12 },
+  { libelle: 'Archiver les contrats fournisseurs 2025', nature: 'AUTRE', element: 'PROCESS', assigneA: 'a.mansouri', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Faible', action: -20, debut: -20, finPrevue: -12, fin: -11, motif: 'Retard d’archivage dû à une pièce manquante.' },
   { libelle: 'Clôturer le plan d’action qualité', nature: 'AUTRE', element: 'PROCESS', assigneA: 'o.taleb', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Faible', action: -30, debut: -30, finPrevue: -20, fin: -19, motif: 'Attente de la validation du fournisseur.' },
+
+  // --- Tâches à faire (action future) -------------------------------------
+  { libelle: 'Organiser l’entretien annuel de l’équipe', nature: 'AUTRE', element: 'EQUIPE', assigneA: 's.benali', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Modérée', action: 2, debut: 2, finPrevue: 12 },
+  { libelle: 'Réviser la procédure de validation des achats', nature: 'AUTRE', element: 'PROCESS', assigneA: 'k.cherif', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Elevée', action: 1, debut: 1, finPrevue: 9 },
+  { libelle: 'Auditer la qualité des données clients', nature: 'AUTRE', element: 'PERFORMANCE', assigneA: 'o.taleb', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Critique', action: 5, debut: 5, finPrevue: 20 },
+  { libelle: 'Déployer le nouveau référentiel de coûts', nature: 'AUTRE', element: 'GOUVERNANCE', assigneA: 'm.saidi', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Elevée', action: 7, debut: 7, finPrevue: 21 },
+  { libelle: 'Préparer les éléments de reporting hebdomadaire', nature: 'AUTRE', element: 'REPORTING', assigneA: 's.benali', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: 1, debut: 1, finPrevue: 5 },
+  { libelle: 'Planifier la revue des fournisseurs stratégiques', nature: 'AUTRE', element: 'RESSOURCES / OUTILS', assigneA: 'k.cherif', acteur: 'GD_TRADING', urgence: 'Pas urgent', importance: 'Faible', action: 4, debut: 4, finPrevue: 18 },
+  { libelle: 'Mettre à jour la matrice des risques', nature: 'AUTRE', element: 'GOUVERNANCE', assigneA: 'r.khelifi', acteur: 'GD_TRADING', urgence: 'Planifiable', importance: 'Modérée', action: 3, debut: 3, finPrevue: 14 },
+
+  // --- En cours (échéance future) -----------------------------------------
+  { libelle: 'Vérifier les rapprochements bancaires', nature: 'AUTRE', element: 'PROCESS', assigneA: 'a.mansouri', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: -2, debut: -2, finPrevue: 2, progression: 70 },
+  { libelle: 'Suivre les indicateurs de performance fournisseurs', nature: 'QUOTIDIENNE', element: 'PERFORMANCE', assigneA: 'l.ferhat', acteur: 'GD_TRADING', urgence: 'Courte échéance', importance: 'Modérée', action: 0, progression: 40 },
 ]
 
 function refuser(condition: boolean, message: string): void {
@@ -112,6 +150,8 @@ function instantaneDemo(tache: Tache): Record<string, unknown> {
   return {
     libelle: tache.libelle,
     nature: tache.nature,
+    typeTache: tache.typeTache,
+    frequence: tache.frequence,
     elementId: tache.elementId,
     acteur: tache.acteur,
     piloteEmployeId: tache.piloteEmployeId ?? null,
@@ -132,6 +172,11 @@ function aujourdhui(): string {
   return todayInTimeZone(new Date(), FUSEAU)
 }
 
+/** Date d'ancrage du scénario (défaut : aujourd'hui, surchargeable par `DEMO_DATE`). */
+function jourAncrage(): string {
+  return process.env['DEMO_DATE'] ?? aujourdhui()
+}
+
 async function main(): Promise<void> {
   const url = process.env['DATABASE_URL'] ?? ''
   refuser(
@@ -145,7 +190,7 @@ async function main(): Promise<void> {
     'Refus : la base de démonstration contient déjà des comptes. Utilisez une base neuve.',
   )
 
-  const jours = aujourdhui()
+  const jours = jourAncrage()
   const date = (decalage: number): Date => calendarDateToUtcDate(addCalendarDays(jours, decalage))
 
   const departements = new Map(
@@ -189,6 +234,10 @@ async function main(): Promise<void> {
           identifiant: compte.identifiant,
           motDePasseHash: hash,
           role: compte.role,
+          // Le service porté est obligatoire pour les rôles RESPONSABLE et
+          // EMPLOYE (contrainte ck_utilisateur_service) ; on le renseigne
+          // aussi pour les autres rôles afin de refléter leur département.
+          serviceId: departementId,
           actif: true,
           // Démonstration uniquement : pas de changement forcé, pour montrer
           // les écrans sans étape intermédiaire. La production applique D76.
@@ -237,6 +286,8 @@ async function main(): Promise<void> {
       const tacheCreee = await tx.tache.create({
         data: {
           nature: tache.nature,
+          typeTache: tache.nature === 'QUOTIDIENNE' ? 'RECURRENTE' : 'SIMPLE',
+          frequence: tache.nature === 'QUOTIDIENNE' ? 'QUOTIDIENNE' : null,
           libelle: tache.libelle,
           elementId,
           acteur: tache.acteur,
@@ -257,6 +308,7 @@ async function main(): Promise<void> {
           statutManuel: tache.statutManuel ?? null,
           progressionManuelle: tache.progression ?? null,
           motifNonAchevement: tache.motif ?? null,
+          statutChecklist: 'VALIDEE',
           urgenceId,
           importanceId,
           creeLe: horodatageCreation,

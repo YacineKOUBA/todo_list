@@ -72,6 +72,7 @@ export function actionAPrendrePourPriorite(code: PrioriteCode): string {
 export interface ProgressionInput {
   progressionSurchargee: boolean
   progressionManuelle: number | null
+  progressionChecklist?: number | null
   dateDebut: CalendarDate
   dateFinPrevue: CalendarDate | null
   dateFin: CalendarDate | null
@@ -81,6 +82,9 @@ export interface ProgressionInput {
 export function calculerProgression(input: ProgressionInput): number {
   if (input.progressionSurchargee && input.progressionManuelle !== null) {
     return Math.min(100, Math.max(0, input.progressionManuelle))
+  }
+  if (input.progressionChecklist !== undefined && input.progressionChecklist !== null) {
+    return Math.min(100, Math.max(0, input.progressionChecklist))
   }
   if (input.dateFin !== null) return 100
 

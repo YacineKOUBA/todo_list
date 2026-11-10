@@ -17,6 +17,7 @@ import {
   normaliserUrgence,
 } from '../domain/calculs'
 import { computeReminderDate, computeReminderSignals } from '../domain/reminder'
+import { progressionChecklist } from '../domain/checklist'
 import { computeTaskStatus } from '../domain/task-status'
 import { resolveServicePorteur } from '../domain/service-porteur'
 import { utcDateToCalendarDate } from '../lib/calendar-date'
@@ -32,6 +33,11 @@ export const INCLUDE_TACHE = {
   actionAPrendre: true,
   creePar: { include: { employe: true } },
   attribuePar: { include: { employe: true } },
+  valideParChecklist: { include: { employe: true } },
+  sousTaches: {
+    orderBy: { ordre: 'asc' },
+    include: { cocheePar: { include: { employe: true } }, creePar: { include: { employe: true } } },
+  },
 } satisfies Prisma.TacheInclude
 
 export type TacheComplete = Prisma.TacheGetPayload<{ include: typeof INCLUDE_TACHE }>
@@ -48,12 +54,22 @@ export interface AssigneADto {
   departement: { id: string; libelle: string } | null
 }
 
+export type SousTacheDto = {
+  id: string
+  libelle: string
+  ordre: number
+  cochee: boolean
+  dateCochee: string | null
+  cocheePar: { id: string; nomComplet: string } | null
+}
+
 export interface TacheListeDto {
   id: string
   libelle: string
   nature: string
   typeTache: string
   isSupplementaire: boolean
+  checklist: { statut: string; total: number; cochees: number }
   statut: { code: string; libelle: string; manuel: boolean }
   progression: number | null
   priorite: { code: string; libelle: string; poids: number }
@@ -109,6 +125,11 @@ export interface TacheDetailDto extends TacheListeDto {
   creeLe: string
   modifieLe: string
   supprimeLe: string | null
+  sousTaches: SousTacheDto[]
+  motifRenvoiChecklist: string | null
+  dateSoumissionChecklist: string | null
+  dateValidationChecklist: string | null
+  valideParChecklist: { id: string; nomComplet: string } | null
 }
 
 export function iso(valeur: Date): string {
@@ -216,9 +237,16 @@ export function toTacheListe(tache: TacheComplete, contexte: ContexteCalendrier)
   })
 
   const echeance = dateFinPrevue ?? dateAction
+  const totalSousTaches = tache.sousTaches.length
+  const cochees = tache.sousTaches.filter((sousTache) => sousTache.cochee).length
+  const progressionDepuisChecklist =
+    tache.statutChecklist === 'VALIDEE' && totalSousTaches > 0
+      ? progressionChecklist(cochees, totalSousTaches)
+      : null
   const progression = calculerProgression({
     progressionSurchargee: tache.progressionSurchargee,
     progressionManuelle: tache.progressionManuelle,
+    progressionChecklist: progressionDepuisChecklist,
     dateDebut,
     dateFinPrevue,
     dateFin,
@@ -266,6 +294,11 @@ export function toTacheListe(tache: TacheComplete, contexte: ContexteCalendrier)
     nature: tache.nature,
     typeTache: tache.typeTache,
     isSupplementaire: tache.isSupplementaire,
+    checklist: {
+      statut: tache.statutChecklist,
+      total: totalSousTaches,
+      cochees,
+    },
     statut,
     progression,
     priorite,
@@ -335,6 +368,24 @@ export function toTacheDetail(tache: TacheComplete, contexte: ContexteCalendrier
     creeLe: iso(tache.creeLe),
     modifieLe: iso(tache.modifieLe),
     supprimeLe: tache.supprimeLe === null ? null : iso(tache.supprimeLe),
+    sousTaches: tache.sousTaches.map((sousTache) => ({
+      id: sousTache.id,
+      libelle: sousTache.libelle,
+      ordre: sousTache.ordre,
+      cochee: sousTache.cochee,
+      dateCochee: sousTache.dateCochee === null ? null : iso(sousTache.dateCochee),
+      cocheePar:
+        sousTache.cocheePar === null ? null : identiteUtilisateur(sousTache.cocheePar),
+    })),
+    motifRenvoiChecklist: tache.motifRenvoiChecklist,
+    dateSoumissionChecklist:
+      tache.dateSoumissionChecklist === null ? null : iso(tache.dateSoumissionChecklist),
+    dateValidationChecklist:
+      tache.dateValidationChecklist === null ? null : iso(tache.dateValidationChecklist),
+    valideParChecklist:
+      tache.valideParChecklist === null
+        ? null
+        : identiteUtilisateur(tache.valideParChecklist),
   }
 }
 

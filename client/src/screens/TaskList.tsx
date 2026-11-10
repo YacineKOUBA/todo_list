@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, ApiError } from '../api'
-import { TaskCard } from '../components/TaskCard'
+import { TaskGroupedList } from '../components/TaskGroupedList'
 import type { Me, Page, TacheListe } from '../types'
-import { ajouterJours, aujourdhuiIso } from '../utils/format'
+import { aujourdhuiIso } from '../utils/format'
 
 type Vue = 'mes-taches-du-jour' | 'mes-autres-taches' | 'mes-taches' | 'service' | 'supplementaires' | 'toutes'
 
@@ -24,17 +24,33 @@ const PRIORITES = [
   { code: 'P4_BASSE', libelle: 'P4 — Basse' },
 ] as const
 
-const PERIODES = [
+const CHAMPS_DATE = [
+  { code: 'TOUTES', libelle: 'Sélectionner une date' },
+  { code: 'dateAction', libelle: 'Date d’action' },
+  { code: 'dateDebut', libelle: 'Date de début' },
+  { code: 'dateFinPrevue', libelle: 'Date de fin prévue' },
+] as const
+
+const TYPES_TACHE = [
+  { code: 'TOUS', libelle: 'Tous' },
+  { code: 'SIMPLE', libelle: 'Simples' },
+  { code: 'RECURRENTE', libelle: 'Récurrentes' },
+] as const
+
+const FREQUENCES = [
   { code: 'TOUTES', libelle: 'Toutes' },
-  { code: 'AUJOURDHUI', libelle: "Aujourd’hui" },
-  { code: '7J', libelle: '7 prochains jours' },
-  { code: '30J', libelle: '30 prochains jours' },
+  { code: 'QUOTIDIENNE', libelle: 'Quotidienne' },
+  { code: 'HEBDOMADAIRE', libelle: 'Hebdomadaire' },
+  { code: 'MENSUELLE', libelle: 'Mensuelle' },
+  { code: 'TRIMESTRIELLE', libelle: 'Trimestrielle' },
+  { code: 'ANNUELLE', libelle: 'Annuelle' },
 ] as const
 
 const TAILLE_PAGE = 20
 
-function echeanceDe(tache: TacheListe): string | null {
-  return tache.nature === 'QUOTIDIENNE' ? tache.dateAction : tache.dateFinPrevue
+/** Seule la vue « toutes les tâches » (archive) s'ouvre sur la date du jour. */
+function dateParDefaut(vue: Vue): string {
+  return vue === 'toutes' ? aujourdhuiIso() : ''
 }
 
 interface TaskListProps {
@@ -53,10 +69,18 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
   const [rechargement, setRechargement] = useState(0)
   const [statut, setStatut] = useState<string>('TOUTES')
   const [priorite, setPriorite] = useState<string>('TOUTES')
+  const [typeFiltre, setTypeFiltre] = useState<string>('TOUS')
+  const [frequenceFiltre, setFrequenceFiltre] = useState<string>('TOUTES')
   const [assigne, setAssigne] = useState<string>('TOUS')
-  const [periode, setPeriode] = useState<string>('TOUTES')
+  const [dateFiltre, setDateFiltre] = useState<string>(() => dateParDefaut(vue))
+  const [champDate, setChampDate] = useState<string>('TOUTES')
   const [recherche, setRecherche] = useState('')
   const [page, setPage] = useState(1)
+
+  useEffect(() => {
+    setDateFiltre(dateParDefaut(vue))
+    setChampDate('TOUTES')
+  }, [vue])
 
   useEffect(() => {
     let annule = false
@@ -64,7 +88,17 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
     setErreur(null)
     // Évite d'afficher brièvement les tâches de la vue précédente.
     setTaches([])
-    api<Page<TacheListe>>(`/tasks?vue=${vue}&taille=200`)
+    const parametres = new URLSearchParams({ vue, taille: '200' })
+    if (vue === 'toutes') {
+      if (dateFiltre !== '') {
+        parametres.set('date', dateFiltre)
+        parametres.set('champDate', champDate)
+      }
+    } else if (vue === 'mes-taches-du-jour') {
+      // Jour même appliqué par le serveur ; « Date cible » choisit le champ.
+      parametres.set('champDate', champDate)
+    }
+    api<Page<TacheListe>>(`/tasks?${parametres.toString()}`)
       .then((donnees) => {
         if (!annule) setTaches(donnees.elements)
       })
@@ -81,11 +115,11 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
     return () => {
       annule = true
     }
-  }, [vue, rechargement])
+  }, [vue, rechargement, dateFiltre, champDate])
 
   useEffect(() => {
     setPage(1)
-  }, [statut, priorite, assigne, periode, recherche, vue])
+  }, [statut, priorite, typeFiltre, frequenceFiltre, assigne, dateFiltre, champDate, recherche, vue])
 
   const assignes = useMemo(() => {
     const uniques = new Map<string, string>()
@@ -107,25 +141,18 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
       .toLocaleLowerCase('fr-FR')
       .normalize('NFD')
       .replace(/\p{Diacritic}/gu, '')
-    const aujourdhui = aujourdhuiIso()
-    const limite =
-      periode === '7J'
-        ? ajouterJours(aujourdhui, 7)
-        : periode === '30J'
-          ? ajouterJours(aujourdhui, 30)
-          : null
 
     return taches.filter((tache) => {
       if (statut !== 'TOUTES' && tache.statut.code !== statut) return false
       if (priorite !== 'TOUTES' && tache.priorite.code !== priorite) return false
-      if (assigne !== 'TOUS' && tache.assigneA.id !== assigne) return false
-
-      if (periode !== 'TOUTES') {
-        const date = echeanceDe(tache)
-        if (date === null) return false
-        if (periode === 'AUJOURDHUI' && date !== aujourdhui) return false
-        if (limite !== null && (date < aujourdhui || date > limite)) return false
+      if (typeFiltre !== 'TOUS' && tache.typeTache !== typeFiltre) return false
+      if (
+        frequenceFiltre !== 'TOUTES' &&
+        (tache.typeTache !== 'RECURRENTE' || tache.frequence !== frequenceFiltre)
+      ) {
+        return false
       }
+      if (assigne !== 'TOUS' && tache.assigneA.id !== assigne) return false
 
       if (rechercheNormalisee.length === 0) return true
       return tache.libelle
@@ -134,7 +161,7 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
         .replace(/\p{Diacritic}/gu, '')
         .includes(rechercheNormalisee)
     })
-  }, [taches, statut, priorite, assigne, periode, recherche])
+  }, [taches, statut, priorite, typeFiltre, frequenceFiltre, assigne, recherche])
 
   const nombrePages = Math.max(1, Math.ceil(visibles.length / TAILLE_PAGE))
   const pageCourante = Math.min(page, nombrePages)
@@ -149,10 +176,16 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
   function reinitialiser(): void {
     setStatut('TOUTES')
     setPriorite('TOUTES')
+    setTypeFiltre('TOUS')
+    setFrequenceFiltre('TOUTES')
     setAssigne('TOUS')
-    setPeriode('TOUTES')
+    setDateFiltre(dateParDefaut(vue))
+    setChampDate('TOUTES')
     setRecherche('')
   }
+
+  const totalSimples = visibles.filter((tache) => tache.typeTache === 'SIMPLE').length
+  const totalRecurrentes = visibles.length - totalSimples
 
   return (
     <section>
@@ -202,6 +235,41 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
           </div>
 
           <div className="filtre-champ">
+            <label htmlFor="filtre-type">Type</label>
+            <select
+              id="filtre-type"
+              value={typeFiltre}
+              onChange={(evenement) => {
+                setTypeFiltre(evenement.target.value)
+                if (evenement.target.value !== 'RECURRENTE') setFrequenceFiltre('TOUTES')
+              }}
+            >
+              {TYPES_TACHE.map((entree) => (
+                <option key={entree.code} value={entree.code}>
+                  {entree.libelle}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {typeFiltre === 'RECURRENTE' && (
+            <div className="filtre-champ">
+              <label htmlFor="filtre-frequence">Fréquence</label>
+              <select
+                id="filtre-frequence"
+                value={frequenceFiltre}
+                onChange={(evenement) => setFrequenceFiltre(evenement.target.value)}
+              >
+                {FREQUENCES.map((entree) => (
+                  <option key={entree.code} value={entree.code}>
+                    {entree.libelle}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="filtre-champ">
             <label htmlFor="filtre-assigne">Assigné à</label>
             <select
               id="filtre-assigne"
@@ -217,20 +285,55 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
             </select>
           </div>
 
-          <div className="filtre-champ">
-            <label htmlFor="filtre-periode">Période</label>
-            <select
-              id="filtre-periode"
-              value={periode}
-              onChange={(evenement) => setPeriode(evenement.target.value)}
-            >
-              {PERIODES.map((entree) => (
-                <option key={entree.code} value={entree.code}>
-                  {entree.libelle}
-                </option>
-              ))}
-            </select>
-          </div>
+          {(vue === 'toutes' || vue === 'mes-taches-du-jour') && (
+            <div className="filtre-champ">
+              <label htmlFor="filtre-champ-date">Date cible</label>
+              <select
+                id="filtre-champ-date"
+                value={champDate}
+                onChange={(evenement) => setChampDate(evenement.target.value)}
+              >
+                {CHAMPS_DATE.map((entree) => (
+                  <option
+                    key={entree.code}
+                    value={entree.code}
+                    hidden={entree.code === 'TOUTES'}
+                  >
+                    {entree.libelle}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {vue === 'toutes' && (
+            <div className="filtre-champ">
+              <label htmlFor="filtre-date">Date</label>
+              <div className="filtre-date">
+                <input
+                  id="filtre-date"
+                  type="date"
+                  value={dateFiltre}
+                  onChange={(evenement) => setDateFiltre(evenement.target.value)}
+                />
+                <button
+                  type="button"
+                  className="bouton"
+                  onClick={() => setDateFiltre(aujourdhuiIso())}
+                >
+                  Aujourd’hui
+                </button>
+                <button
+                  type="button"
+                  className="bouton"
+                  onClick={() => setDateFiltre('')}
+                  disabled={dateFiltre === ''}
+                >
+                  Toutes les dates
+                </button>
+              </div>
+            </div>
+          )}
 
           <button type="button" className="bouton filtres__reset" onClick={reinitialiser}>
             Réinitialiser
@@ -285,11 +388,13 @@ export function TaskList({ me, vue, titre, sousTitre, onOuvrir, onCreer }: TaskL
         </div>
       )}
 
-      <div className="liste">
-        {pageAffichee.map((tache) => (
-          <TaskCard key={tache.id} tache={tache} onOuvrir={onOuvrir} />
-        ))}
-      </div>
+      <TaskGroupedList
+        taches={pageAffichee}
+        totalSimples={totalSimples}
+        totalRecurrentes={totalRecurrentes}
+        onOuvrir={onOuvrir}
+        estAdmin={me.utilisateur.role === 'ADMIN'}
+      />
 
       {!chargement && erreur === null && visibles.length > TAILLE_PAGE && (
         <nav className="pagination" aria-label="Pagination des tâches">

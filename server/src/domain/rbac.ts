@@ -39,6 +39,9 @@ export function estExecutant(utilisateur: UtilisateurRbac, tache: RessourceTache
 }
 
 export function peutVoirTache(utilisateur: UtilisateurRbac, tache: RessourceTache): boolean {
+  // Confidentialité des tâches supplémentaires : seul leur créateur peut les
+  // voir. Cette règle prime sur tous les rôles, y compris ADMIN et CONSULTANT.
+  if (tache.isSupplementaire) return tache.creeParId === utilisateur.id
   if (utilisateur.role === 'ADMIN' || utilisateur.role === 'CONSULTANT') return true
   if (tache.creeParId === utilisateur.id) return true
   if (

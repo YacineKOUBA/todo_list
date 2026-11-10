@@ -374,18 +374,23 @@ Les **quatre zones grises G1 à G4** laissées ouvertes par l'ÉTAPE 10 sont tra
 | **EF-39** | Le **service porteur** d'une tâche est le **département de l'exécutant** ; à défaut, celui du **pilote** ; il n'est pas saisi. | ✅ | **P7 → D29** |
 | **EF-40** | Pour une tâche créée par un non-admin, **urgence et importance** sont saisies par le **créateur habilité, dans son périmètre**, puis la matrice calcule priorité, score, fréquence et action à prendre. | ✅ | **C12 → D33** |
 
+> **Précision (09/11/2026)** : une **tâche supplémentaire** n'est visible que par
+> **son créateur**, quel que soit son rôle. Ni l'`ADMIN`, ni le `CONSULTANT`,
+> ni le `RESPONSABLE` d'un service ne voient les tâches supplémentaires créées
+> par un autre utilisateur.
+
 ### 4.4 Consultation et vues
 
 | # | Exigence | Statut | Source |
 |---|---|---|---|
-| **EF-41** | L'employé dispose d'une vue **« Mes tâches du jour »** : tâches du jour qui lui sont assignées, dont il est pilote ou qu'il a créées, non achevées et non annulées. | ✅ | RE-05 |
+| **EF-41** | L'utilisateur dispose d'une vue **« Tableau de bord / Mes tâches du jour »** : tâches dont la **date d'action**, la **date de début** ou la **date de fin prévue** est le **jour même**, dans son périmètre (toutes pour l'admin, service du responsable, tâches propres de l'employé). Seul le filtre **« Date cible »** est proposé (choix du champ comparé à aujourd'hui), sans sélecteur de date. | ✅ | RE-05 |
 | **EF-42** | L'employé dispose d'une vue **« Mes autres tâches »** : tâches long terme déjà assignées, sans file d'attente ni prise de tâche. | ✅ | RE-06, D19 |
 | **EF-43** | Tout utilisateur dispose d'une vue **« Mes tâches »** couvrant ses tâches assignées, pilotées et créées. | ✅ | A13, D16 |
 | **EF-44** | Le responsable dispose d'une vue **« Mon service »** : employés de son service et leurs tâches. | ✅ | RE-14, D17 |
 | **EF-45** | L'admin dispose d'une vue **« Tous les services »** : toutes les tâches, tous les employés. | ✅ | RE-04 |
 | **EF-46** | Le consultant dispose d'une vue **« Toutes les tâches »**, en lecture seule. | ✅ | D7, D21 |
 | **EF-47** | Le détail d'une tâche affiche tous les champs, les valeurs calculées, le motif, les commentaires et l'historique. | ✅ | D3, D15 |
-| **EF-48** | Les listes sont filtrables par statut, nature, service, exécutant, pilote, échéance, priorité et rappel. | 🔧 | RE-19 |
+| **EF-48** | Les listes sont filtrables par statut, nature, service, exécutant, pilote, échéance, **date (action / début / fin prévue)**, priorité et rappel. | 🔧 | RE-19 |
 | **EF-49** | Les listes sont triables et paginées. | 🔧 | RE-19 |
 | **EF-50** | Une date de rappel **échéé** est signalée en rouge ; une date **imminente** (J+1 à J+5) est signalée distinctement. | ✅ | Excel, D23 |
 | **EF-51** | Une tâche en retard est signalée par le libellé `Retard`, une icône et le rouge. | ✅ | D3, D23 |

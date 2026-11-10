@@ -42,12 +42,9 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
     'QUOTIDIENNE' | 'HEBDOMADAIRE' | 'MENSUELLE' | 'TRIMESTRIELLE' | 'ANNUELLE'
   >('HEBDOMADAIRE')
   const [dateFinRecurrence, setDateFinRecurrence] = useState(ajouterJours(aujourdhuiIso(), 90))
-  // La nature découle du type : une récurrence quotidienne est une tâche du jour,
-  // tout le reste est planifié avec une échéance.
-  const nature: 'AUTRE' | 'QUOTIDIENNE' =
-    !supplementaire && typeTache === 'RECURRENTE' && frequence === 'QUOTIDIENNE'
-      ? 'QUOTIDIENNE'
-      : 'AUTRE'
+  // Une récurrence quotidienne reste une tâche du jour ; les autres types
+  // récurrents et les tâches simples sont planifiés avec une échéance.
+  const quotidienne = typeTache === 'RECURRENTE' && frequence === 'QUOTIDIENNE'
   const [libelle, setLibelle] = useState('')
   const [elementId, setElementId] = useState('')
   const [acteur, setActeur] = useState<'GD_TRADING' | 'PARTENAIRE'>('GD_TRADING')
@@ -201,20 +198,18 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
     setEnvoi(true)
 
     const corps: Record<string, unknown> = {
-      nature,
-      typeTache: supplementaire ? 'SIMPLE' : typeTache,
+      typeTache,
       isSupplementaire: supplementaire,
       libelle,
       elementId,
       acteur,
       dateAction,
-      dateDebut: nature === 'QUOTIDIENNE' ? dateAction : dateDebut,
-      dateFinPrevue: nature === 'QUOTIDIENNE' ? null : dateFinPrevue,
+      dateDebut: quotidienne ? dateAction : dateDebut,
+      dateFinPrevue: quotidienne ? null : dateFinPrevue,
       urgenceId,
       importanceId,
-      frequence: supplementaire ? null : typeTache === 'RECURRENTE' ? frequence : null,
-      dateFinRecurrence:
-        supplementaire ? null : typeTache === 'RECURRENTE' ? dateFinRecurrence : null,
+      frequence: typeTache === 'RECURRENTE' ? frequence : null,
+      dateFinRecurrence: typeTache === 'RECURRENTE' ? dateFinRecurrence : null,
       commentaireInitial: commentaireInitial.trim().length === 0 ? null : commentaireInitial.trim(),
     }
 
@@ -285,7 +280,7 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
           <h1>{supplementaire ? 'Nouvelle tâche supplémentaire' : 'Nouvelle tâche'}</h1>
           <p className="page-sous-titre">
             {supplementaire
-              ? 'Tâche ajoutée à votre propre liste, hors planification officielle et sans score.'
+              ? 'Tâche ajoutée à votre propre liste, visible uniquement par vous, hors planification officielle et sans score.'
               : 'Les champs sont contrôlés par le serveur ; les erreurs s’affichent sous le champ concerné.'}
           </p>
         </div>
@@ -312,48 +307,44 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
             </label>
           )}
 
-          {!supplementaire && (
+          <label htmlFor="typeTache">Type de tâche</label>
+          <select
+            id="typeTache"
+            value={typeTache}
+            onChange={(evenement) =>
+              setTypeTache(evenement.target.value as 'SIMPLE' | 'RECURRENTE')
+            }
+          >
+            <option value="SIMPLE">Tâche simple</option>
+            <option value="RECURRENTE">Tâche récurrente</option>
+          </select>
+
+          {typeTache === 'RECURRENTE' && (
             <>
-              <label htmlFor="typeTache">Type de tâche</label>
+              <label htmlFor="frequence">Fréquence</label>
               <select
-                id="typeTache"
-                value={typeTache}
+                id="frequence"
+                value={frequence}
                 onChange={(evenement) =>
-                  setTypeTache(evenement.target.value as 'SIMPLE' | 'RECURRENTE')
+                  setFrequence(evenement.target.value as typeof frequence)
                 }
               >
-                <option value="SIMPLE">Tâche simple</option>
-                <option value="RECURRENTE">Tâche récurrente</option>
+                <option value="QUOTIDIENNE">Quotidienne</option>
+                <option value="HEBDOMADAIRE">Hebdomadaire</option>
+                <option value="MENSUELLE">Mensuelle</option>
+                <option value="TRIMESTRIELLE">Trimestrielle</option>
+                <option value="ANNUELLE">Annuelle</option>
               </select>
-
-              {typeTache === 'RECURRENTE' && (
-                <>
-                  <label htmlFor="frequence">Fréquence</label>
-                  <select
-                    id="frequence"
-                    value={frequence}
-                    onChange={(evenement) =>
-                      setFrequence(evenement.target.value as typeof frequence)
-                    }
-                  >
-                    <option value="QUOTIDIENNE">Quotidienne</option>
-                    <option value="HEBDOMADAIRE">Hebdomadaire</option>
-                    <option value="MENSUELLE">Mensuelle</option>
-                    <option value="TRIMESTRIELLE">Trimestrielle</option>
-                    <option value="ANNUELLE">Annuelle</option>
-                  </select>
-                  <label htmlFor="dateFinRecurrence">Fin de la récurrence *</label>
-                  <input
-                    id="dateFinRecurrence"
-                    type="date"
-                    value={dateFinRecurrence}
-                    onChange={(evenement) => setDateFinRecurrence(evenement.target.value)}
-                    required
-                  />
-                  {erreurChamp('dateFinRecurrence') !== null && (
-                    <p className="erreur-champ">{erreurChamp('dateFinRecurrence')}</p>
-                  )}
-                </>
+              <label htmlFor="dateFinRecurrence">Fin de la récurrence *</label>
+              <input
+                id="dateFinRecurrence"
+                type="date"
+                value={dateFinRecurrence}
+                onChange={(evenement) => setDateFinRecurrence(evenement.target.value)}
+                required
+              />
+              {erreurChamp('dateFinRecurrence') !== null && (
+                <p className="erreur-champ">{erreurChamp('dateFinRecurrence')}</p>
               )}
             </>
           )}
@@ -535,7 +526,7 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
             value={dateAction}
             onChange={(evenement) => {
               setDateAction(evenement.target.value)
-              if (nature === 'QUOTIDIENNE') setDateDebut(evenement.target.value)
+              if (quotidienne) setDateDebut(evenement.target.value)
             }}
             required
           />
@@ -543,7 +534,7 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
             <p className="erreur-champ">{erreurChamp('dateAction')}</p>
           )}
 
-          {nature === 'AUTRE' && (
+          {!quotidienne && (
             <>
               <label htmlFor="dateDebut">Date de début *</label>
               <input
@@ -568,7 +559,7 @@ export function TaskCreate({ me, onCree, onAnnuler }: TaskCreateProps) {
             </>
           )}
 
-          {nature === 'QUOTIDIENNE' && (
+          {quotidienne && (
             <p className="aide">
               Une tâche récurrente quotidienne démarre le jour d’action et doit être créée avant
               16 h 30. Les occurrences suivantes se déduisent de la fréquence.

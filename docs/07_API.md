@@ -429,7 +429,7 @@ La réponse contient `pagination.page`, `pagination.taille`, `pagination.total`,
 
 | Paramètre | Type | Effet |
 |---|---|---|
-| `vue` | enum | `mes-taches-du-jour` · `mes-autres-taches` · `mes-taches` · `service` · `toutes` (défaut `mes-taches`) |
+| `vue` | enum | `mes-taches-du-jour` · `mes-autres-taches` · `mes-taches` · `service` · `supplementaires` · `toutes` (défaut `mes-taches`) |
 | `statut` | liste de codes | `A_FAIRE`, `EN_COURS`, `RETARD`, `ACHEVEE`, `ANNULEE`, `SUSPENDUE` |
 | `nature` | enum | `QUOTIDIENNE` · `AUTRE` |
 | `departementId` | uuid | Service porteur |
@@ -439,6 +439,8 @@ La réponse contient `pagination.page`, `pagination.taille`, `pagination.total`,
 | `elementId` | uuid | Élément / pilier |
 | `urgenceId`, `importanceId` | uuid | Filtres de priorité |
 | `echeanceDu`, `echeanceAu` | date | Borne sur `dateFinPrevue` (ou `dateAction` pour une quotidienne) |
+| `date` | date | Jour filtré : retient les tâches dont le champ choisi par `champDate` tombe ce jour-là. **Sans `date`, la vue `mes-taches-du-jour` se limite au jour même** |
+| `champDate` | enum | `TOUTES` (défaut : action, début **ou** fin prévue) · `dateAction` · `dateDebut` · `dateFinPrevue` |
 | `rappelEchu` | booléen | Date de rappel dépassée (EF-50) |
 | `rappelImminent` | booléen | Rappel dans J+1 à J+5 (EF-50) |
 | `libelle` | texte | Recherche « contient », insensible à la casse et aux accents |
@@ -448,12 +450,19 @@ La réponse contient `pagination.page`, `pagination.taille`, `pagination.total`,
 
 | `vue` | Contenu | Rôles |
 |---|---|---|
-| `mes-taches-du-jour` | Tâches où je suis assigné, pilote ou créateur ; `dateAction` = aujourd'hui ; non clôturées ; non annulées (EF-41) | Tous avec fiche employé |
+| `mes-taches-du-jour` | **Tableau de bord** : toutes les tâches (`ADMIN`), du service (`RESPONSABLE`) ou propres (`EMPLOYE`), sans filtre de statut, **limitées au jour même** : date d'action, de début **ou** de fin prévue = aujourd'hui ; `champDate` choisit le champ comparé (EF-41) | Tous avec fiche employé |
 | `mes-autres-taches` | Tâches `AUTRE` **qui me sont assignées**, non clôturées, non annulées (EF-42, D19) | Tous avec fiche employé |
 | `mes-taches` | Assignées + pilotées + créées (A13, EF-43) | Tous avec fiche employé |
 | `service` | Tâches dont le service porteur est mon département (EF-44) ; l'admin peut préciser `departementId` | `RESPONSABLE`, `ADMIN` |
-| `toutes` | Toutes les tâches (EF-45, EF-46) | `ADMIN`, `CONSULTANT` |
+| `supplementaires` | Tâches supplémentaires **créées par l'utilisateur courant** | `ADMIN`, `RESPONSABLE`, `EMPLOYEE` |
+| `toutes` | Toutes les tâches (EF-45, EF-46), **hors tâches supplémentaires d'autrui** | `ADMIN`, `CONSULTANT` |
 
+> **Confidentialité des tâches supplémentaires (précision du 09/11/2026)** : quel
+> que soit le rôle — `ADMIN` et `CONSULTANT` compris —, un utilisateur ne voit
+> **que les tâches supplémentaires qu'il a lui-même créées**. Le filtre
+> `creeParId = utilisateur.id` s'applique à **toutes** les vues ; le détail d'une
+> tâche supplémentaire d'autrui renvoie `404`.
+>
 > Un `CONSULTANT` qui demande une autre vue reçoit `403`. Un `EMPLOYEE` qui demande `service` ou `toutes` reçoit `403`. Un `ADMIN` sans fiche employé (**D20** l'exclut) ne peut pas utiliser les vues `mes-*`.
 
 ### 6.3 Tri
@@ -625,6 +634,8 @@ Le statut est **calculé** (AR-05). Un filtre `statut=RETARD` ne peut pas être 
 #### `GET /tasks`
 
 Paramètres : section 6 (vue, filtres, tri, pagination).
+
+> `date` + `champDate=TOUTES` (défaut) retient les tâches dont la **date d'action**, la **date de début** ou la **date de fin prévue** correspond au jour demandé. `champDate` peut cibler un seul de ces champs. Sans `date`, seule la vue `mes-taches-du-jour` applique implicitement le jour même ; les autres vues ne sont pas filtrées par date.
 
 **Réponse `200`** :
 

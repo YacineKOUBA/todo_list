@@ -205,9 +205,10 @@ export function App() {
         return (
           <TaskList
             me={me}
+            key="toutes"
             vue="toutes"
             titre="Toutes les tâches"
-            sousTitre="Périmètre complet — suivi, retards et rappels."
+            sousTitre="Périmètre complet — tâches du jour par défaut ; choisissez une autre date ou « Toutes les dates »."
             onOuvrir={(id) => naviguer(`#/tache/${id}`)}
             onCreer={() => naviguer('#/nouvelle-tache')}
           />
@@ -224,6 +225,7 @@ export function App() {
         return (
           <TaskList
             me={me}
+            key="service"
             vue="service"
             titre="Tâches de mon service"
             sousTitre={
@@ -239,9 +241,10 @@ export function App() {
         return (
           <TaskList
             me={me}
+            key="supplementaires"
             vue="supplementaires"
-            titre="Suivi des tâches supplémentaires"
-            sousTitre="Tâches ajoutées hors plan initial — sans effet sur le score de performance."
+            titre="Mes tâches supplémentaires"
+            sousTitre="Visibles uniquement par vous — tâches ajoutées hors plan initial, sans effet sur le score de performance."
             onOuvrir={(id) => naviguer(`#/tache/${id}`)}
             onCreer={() => naviguer('#/nouvelle-tache')}
           />
@@ -250,6 +253,7 @@ export function App() {
         return (
           <TaskList
             me={me}
+            key="mes-autres-taches"
             vue="mes-autres-taches"
             titre="Mes autres tâches"
             sousTitre="Tâches simples ou récurrentes qui vous sont assignées, hors tâches du jour."
@@ -261,6 +265,7 @@ export function App() {
         return (
           <TaskList
             me={me}
+            key="mes-taches"
             vue="mes-taches"
             titre="Mes tâches"
             sousTitre="Toutes les tâches dont vous êtes exécutant, pilote ou auteur."
@@ -272,9 +277,10 @@ export function App() {
         return (
           <TaskList
             me={me}
+            key="mes-taches-du-jour"
             vue="mes-taches-du-jour"
-            titre="Mes tâches du jour"
-            sousTitre={dateLongueFr()}
+            titre={me.utilisateur.role === 'ADMIN' ? 'Tableau de bord' : 'Mes tâches du jour'}
+            sousTitre={`${dateLongueFr()} — tâches liées au jour même (Date cible : action, début ou fin prévue).`}
             onOuvrir={(id) => naviguer(`#/tache/${id}`)}
             onCreer={() => naviguer('#/nouvelle-tache')}
           />

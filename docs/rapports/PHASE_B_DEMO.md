@@ -53,7 +53,7 @@ distincts** au sens fonctionnel.
 | Base | `gd_trading_demo` (PostgreSQL 16, port **5433**) |
 | Création | base neuve, `prisma migrate deploy`, seed de référence (55 lignes), puis `prisma/seed-demo.ts` |
 | Comptes | **11 comptes fictifs** : 1 `ADMIN`, 3 `RESPONSABLE`, 6 `EMPLOYEE`, 1 `CONSULTANT` |
-| Tâches | **22 tâches** fictives (datées et quotidiennes), statuts variés : à faire, en cours, en retard, achevée, annulée, suspendue |
+| Tâches | **30 tâches** fictives ancrées sur le jour courant : statuts variés (à faire, en cours, en retard, achevée, suspendue, annulée), priorités P1 à P4, natures datée et quotidienne, acteurs `GD_TRADING` et `PARTENAIRE` |
 | Partenaire | 1 partenaire fictif (`TRANSPORTEUR ATLAS`) |
 | Mot de passe | `GdTradingDemo2026!` (commun aux comptes de démonstration) |
 | Compte principal | `admin` |
@@ -62,7 +62,14 @@ distincts** au sens fonctionnel.
 Le script `server/prisma/seed-demo.ts` **refuse de s'exécuter** si l'URL de base
 ne contient pas `gd_trading_demo`, et refuse d'écraser une base déjà peuplée.
 Il est **idempotent par construction** : il exige une base neuve, donc un
-deuxième passage échoue sans rien modifier.
+deuxième passage échoue sans rien modifier. Pour recharger le scénario, il faut
+réinitialiser la base (section 2.3).
+
+**Scénario du jour** — 11 tâches sont liées au jour même (09/11/2026 lors de la
+recette), avec des ensembles distincts selon « Date cible » : 9 par date
+d'action, 9 par date de début, 2 par date de fin prévue, 11 au total. Les
+tâches quotidiennes du jour passent en retard après l'heure d'échéance (16:30),
+conformément au moteur de statut.
 
 ### 2.2 Port de l'interface
 
@@ -82,13 +89,20 @@ GD Trading écoute sur **`http://localhost:5273`**, avec `strictPort: true` dans
 ### 2.3 Commandes
 
 ```powershell
-# Base de démonstration (une seule fois, base neuve)
+# Base de démonstration neuve (une seule fois)
+cd server
 $env:DATABASE_URL = 'postgresql://gd_trading@127.0.0.1:5433/gd_trading_demo'
-npx --prefix server prisma migrate deploy --schema server/prisma/schema.prisma
-npm run db:seed  --workspace @gd-trading/server
-npm run demo:seed --workspace @gd-trading/server
+npx prisma migrate deploy
+npx tsx --env-file=.env.demo prisma/seed.ts
+npm run demo:seed
 
-# Démarrage
+# Recharger complètement le scénario fictif (destructif)
+npx prisma migrate reset --force --skip-seed
+npx tsx --env-file=.env.demo prisma/seed.ts
+npm run demo:seed
+
+# Démarrage (depuis la racine)
+cd ..
 npm run demo:start --workspace @gd-trading/server   # API, port 3000
 npm run dev       --workspace @gd-trading/client    # interface, port 5273
 ```
@@ -156,9 +170,9 @@ et 1 refus explicite conforme (`DELETE /employees/:id` → `405`, docs/07 §9).
 | Écran | Contenu | Capture |
 |---|---|---|
 | Connexion | Marque, formulaire, message d'erreur générique, encart de démonstration | — |
-| Aujourd'hui | Tâches du jour de l'utilisateur, rappels, retards | — |
+| Aujourd'hui / Tableau de bord | Tâches du jour même (date d'action, de début ou de fin prévue choisie par « Date cible ») dans le périmètre de l'utilisateur, sans sélecteur de date, rappels, retards | — |
 | Mes tâches | Toutes les tâches dont l'utilisateur est exécutant, pilote ou auteur | — |
-| Toutes les tâches | Vue administrateur / consultant, filtres par statut, recherche | `captures/01-liste-taches.jpeg` |
+| Toutes les tâches | Vue administrateur / consultant, filtres par statut, recherche, **filtre par date** (action, début, fin prévue) | `captures/01-liste-taches.jpeg` |
 | Détail d'une tâche | Champs complets, progression, actions, commentaires, historique | `captures/02-detail-tache.jpeg` |
 | Nouvelle tâche | Formulaire complet contrôlé par le serveur (matrice, dates, pilote) | `captures/03-nouvelle-tache.jpeg` |
 
@@ -200,16 +214,29 @@ production conserve D76 (changement forcé).
 
 ## 6. Données de démonstration
 
+Le scénario est **ancré sur le jour courant** : les dates sont calculées à
+partir de la date d'exécution du script (décalages en jours), il reste donc
+valable quelle que soit la date de la démonstration.
+
 - 11 comptes, tous rattachés à un employé fictif et à un département réel du
-  seed de référence ;
-- 22 tâches couvrant la matrice de priorité (13 combinaisons, 3 absentes par
-  conception — D31), les natures datée et quotidienne, les acteurs `GD_TRADING`
-  et `PARTENAIRE`, les statuts manuels et les clôtures tardives ;
+  seed de référence ; chaque compte et chaque service possède des tâches ;
+- **30 tâches** couvrant les cas cœur métier :
+  - **statuts** : à faire, en cours, retard, achevée, suspendue, annulée
+    (les statuts sont recalculés à la lecture, jamais stockés) ;
+  - **priorités** : P1, P2, P3 et P4, déduites des référentiels urgence et
+    importance ;
+  - **dates** : aujourd'hui, passé et futur ; le jour même est atteint par
+    `dateAction` (9 tâches), `dateDebut` (9 tâches) et `dateFinPrevue`
+    (2 tâches), ce qui donne des ensembles distincts pour « Date cible » ;
+  - **nature** : 24 tâches datées et 6 tâches quotidiennes ;
+  - **acteur** : 28 tâches `GD_TRADING` et 2 tâches `PARTENAIRE` ;
+  - **statuts manuels** : 1 tâche annulée et 1 tâche suspendue ;
+  - **clôtures** : à l'heure, en avance et en retard (avec motif) ;
 - 1 commentaire initial ;
 - **historique pré-rempli** : les insertions directes ne passent pas par les
   routes, donc `seed-demo.ts` écrit lui-même les événements d'audit
-  (`22 CREATION`, `3 CLOTURE`, `2 MOTIF`, `1 COMMENTAIRE`,
-  `2 CHANGEMENT_STATUT`, `1 CHANGEMENT_PROGRESSION`). L'écran de détail montre
+  (`30 CREATION`, `4 CLOTURE`, `2 MOTIF`, `1 COMMENTAIRE`,
+  `2 CHANGEMENT_STATUT`, `6 CHANGEMENT_PROGRESSION`). L'écran de détail montre
   ainsi un historique non vide dès la première ouverture.
 
 Aucun nom, e-mail ou identifiant réel n'est utilisé. Aucun compte nominatif

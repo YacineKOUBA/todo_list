@@ -165,6 +165,7 @@ Routes **proposées** (React Router). Elles sont **côté client** : elles n'ajo
 | `/aujourdhui` | IHM-02 Mes tâches du jour | Avec fiche employé | Oui |
 | `/autres-taches` | IHM-03 Mes autres tâches | Avec fiche employé | Oui |
 | `/mes-taches` | IHM-04 Toutes mes tâches | Avec fiche employé | Oui |
+| `/supplementaires` | Mes tâches supplémentaires | `ADMIN`, `RESPONSABLE`, `EMPLOYEE` | Oui |
 | `/taches/:id` | IHM-05 Détail d'une tâche | Selon visibilité de la tâche | Oui |
 | `/taches/nouvelle` | IHM-06 Formulaire — création | `ADMIN`, `RESPONSABLE`, `EMPLOYEE` | Oui |
 | `/taches/:id/modifier` | IHM-06 Formulaire — modification | Selon droits d'écriture | Oui |
@@ -179,6 +180,7 @@ Routes **proposées** (React Router). Elles sont **côté client** : elles n'ajo
 | `/interdit` | Écran technique `403` | Authentifié | Oui |
 | `*` | Écran technique `404` | Authentifié | Oui |
 
+> **Tâches supplémentaires** : l'écran `/supplementaires` n'affiche que les tâches supplémentaires **créées par l'utilisateur connecté**. Ni l'`ADMIN`, ni le `CONSULTANT`, ni un `RESPONSABLE` ne voient celles d'un autre utilisateur (précision du 09/11/2026).
 > **✅ D63** : **IHM-09 est partagé** entre `ADMIN` (écriture) et `CONSULTANT` (lecture seule intégrale, actions d'écriture absentes). C'est la seule lecture cohérente avec EF-46 / EF-07, **UC-17** et `GET /tasks?vue=toutes`.
 > **✅ D59** : écran d'atterrissage par rôle — `EMPLOYEE` → `/aujourdhui`, `RESPONSABLE` → `/service`, `ADMIN` → `/toutes-les-taches`, `CONSULTANT` → `/toutes-les-taches`.
 
@@ -303,24 +305,31 @@ Le menu est construit **à partir de l'objet `Me`** renvoyé par `GET /me`. Aucu
 |---|---|
 | **Route** | `/aujourdhui` |
 | **Rôles** | `EMPLOYEE`, `RESPONSABLE`, `ADMIN` (avec fiche employé) |
-| **Objectif** | Voir et traiter les tâches **quotidiennes du jour** qui me sont assignées |
+| **Objectif** | Voir les tâches **du jour même** dont la date d'action, la date de début **ou** la date de fin prévue correspond à aujourd'hui |
 
 **Contenu**
 
-1. **Bandeau d'en-tête** : date du jour en français (`lundi 2 novembre 2026`), heure limite `16:30`, nombre de tâches du jour.
-2. **Compteurs** (issus de `pagination.total` par appel filtré, jamais d'un comptage local) :
+1. **Bandeau d'en-tête** : date en français (`lundi 2 novembre 2026`), heure limite `16:30`, nombre de tâches.
+2. **Filtre « Date cible » seul** : le sélecteur choisit le champ à comparer au **jour même** (`Date d'action`, `Date de début`, `Date de fin prévue`). Par défaut, « Sélectionner une date » (option masquée de la liste) laisse les **trois** champs pris en compte. **Aucun sélecteur de date** : la date reste fixée à aujourd'hui. Le filtre s'applique dans le périmètre de l'utilisateur.
+3. **Compteurs** (issus de `pagination.total` par appel filtré, jamais d'un comptage local) :
    - à faire,
    - en cours,
    - en retard (rouge),
    - achevées.
-3. **Liste** des tâches du jour, **réordonnée à l'affichage** par statut puis échéance (D64) — aucun tri serveur sur un champ calculé (T8-08).
-4. **État vide** : « Aucune tâche prévue aujourd'hui. » + bouton **Nouvelle tâche** si l'utilisateur peut créer.
+4. **Liste** des tâches retenues, **réordonnée à l'affichage** par statut puis échéance (D64) — aucun tri serveur sur un champ calculé (T8-08).
+5. **État vide** : « Aucune tâche à afficher » et, selon le cas, « Aucune tâche ne correspond à cette vue pour le moment. » ou « Aucune tâche ne correspond aux filtres ou à la recherche. » + bouton **Créer une tâche** si l'utilisateur peut créer.
+
+**Périmètre**
+
+- `ADMIN` : toutes les tâches.
+- `RESPONSABLE` : les tâches de son service.
+- `EMPLOYE` : ses tâches (assignées, pilotées ou créées).
 
 **Données**
 
 | Usage | Endpoint | Paramètres |
 |---|---|---|
-| Liste | `GET /tasks` | `vue=mes-taches-du-jour`, `page`, `taille=50`, `tri=score:desc` (seul tri serveur autorisé ici : `statut` est calculé et non triable, T8-08) |
+| Liste | `GET /tasks` | `vue=mes-taches-du-jour`, `champDate=<TOUTES|dateAction|dateDebut|dateFinPrevue>`, `page`, `taille=50`, `tri=score:desc` (le jour même est appliqué par le serveur ; `statut` est calculé et non triable, T8-08) |
 | Compteurs | `GET /tasks` | même `vue` + `statut=<code>` avec `taille=1` (lecture de `pagination.total`) |
 | Ouverture | navigation vers `/taches/:id` | — |
 | Clôture rapide | `POST /tasks/:id/close` | — |
@@ -629,16 +638,17 @@ Le menu est construit **à partir de l'objet `Me`** renvoyé par `GET /me`. Aucu
 
 **Contenu**
 
-- **Filtres** : service porteur, exécutant, pilote, statut, nature, élément, urgence / importance, échéance, rappel, libellé, **tâches supprimées** (`supprimees`, admin uniquement).
+- **Filtres** : **date** (sélecteur **« Date cible »** affichant « Sélectionner une date » par défaut — les trois champs sont alors pris en compte — ou `Date d'action`, `Date de début`, `Date de fin prévue` + jour choisi, **initialisé à aujourd'hui**, bouton « Toutes les dates »), service porteur, exécutant, pilote, statut, nature, élément, urgence / importance, échéance, rappel, libellé, **tâches supprimées** (`supprimees`, admin uniquement).
 - **Tableau** identique à IHM-04, avec colonne **Service porteur**.
 - **Actions** : **Nouvelle tâche** (admin), **Ouvrir**, **Supprimer** (admin).
 - Pour le `CONSULTANT` : **aucune** action d'écriture, aucun bouton « Nouvelle tâche », colonne « supprimées » absente.
 
-**Données** : `GET /tasks?vue=toutes`, `GET /departments`, `GET /employees`, `GET /partners`.
+**Données** : `GET /tasks?vue=toutes&date=AAAA-MM-JJ&champDate=TOUTES` (date initialisée à aujourd'hui ; le filtre s'applique dans le périmètre autorisé), `GET /departments`, `GET /employees`, `GET /partners`.
 
 **Règles**
 
 - La vue `toutes` est la seule à exposer les tâches de tous les services.
+- Le **filtre par date** retient les tâches dont la date d'action, de début ou de fin prévue correspond au jour choisi ; « Toutes les dates » le désactive. Chaque rôle reste limité à son périmètre.
 - Le filtre `supprimees=true` est **réservé à l'admin** ; l'interface ne l'affiche pas aux autres rôles.
 - Aucun export, aucune impression en V1.
 

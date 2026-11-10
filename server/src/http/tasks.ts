@@ -33,6 +33,15 @@ import {
   peutVoirTache,
   type TachePourAutorisation,
 } from './authorization'
+import {
+  appliquerDateDebutValidation,
+  checklistBloquante,
+  peutCocherChecklist,
+  peutStructurerChecklist,
+  peutSoumettreChecklist,
+  peutValiderChecklist,
+  type ContexteChecklist,
+} from '../domain/checklist'
 import { chargerCalendrier, echeanceQuotidienne, estJourOuvre } from './calendar'
 import type { ContexteCalendrier } from './calendar'
 import { ecrireAudit } from './audit'
@@ -68,6 +77,10 @@ const VUES = [
 ] as const
 type Vue = (typeof VUES)[number]
 
+/** Champs de date utilisables par le filtre `date` (tableau de bord). */
+const CHAMPS_DATE = ['TOUTES', 'dateAction', 'dateDebut', 'dateFinPrevue'] as const
+type ChampDate = (typeof CHAMPS_DATE)[number]
+
 const STATUTS = ['A_FAIRE', 'EN_COURS', 'RETARD', 'ACHEVEE', 'ANNULEE', 'SUSPENDUE'] as const
 type StatutCode = (typeof STATUTS)[number]
 
@@ -95,7 +108,10 @@ const CHAMPS_CALCULES = [
 const schemaListe = z.strictObject({
   vue: z.enum(VUES).default('mes-taches'),
   statut: z.union([z.string(), z.array(z.string())]).optional(),
-  nature: z.enum(['QUOTIDIENNE', 'AUTRE']).optional(),
+  typeTache: z.enum(['SIMPLE', 'RECURRENTE']).optional(),
+  frequence: z
+    .enum(['QUOTIDIENNE', 'HEBDOMADAIRE', 'MENSUELLE', 'TRIMESTRIELLE', 'ANNUELLE'])
+    .optional(),
   departementId: schemaUuid.optional(),
   assigneAId: schemaUuid.optional(),
   piloteEmployeId: schemaUuid.optional(),
@@ -105,6 +121,8 @@ const schemaListe = z.strictObject({
   importanceId: schemaUuid.optional(),
   echeanceDu: schemaDate.optional(),
   echeanceAu: schemaDate.optional(),
+  date: schemaDate.optional(),
+  champDate: z.enum(CHAMPS_DATE).default('TOUTES'),
   rappelEchu: schemaBooleen.optional(),
   rappelImminent: schemaBooleen.optional(),
   libelle: z.string().max(255).optional(),
@@ -115,8 +133,14 @@ const schemaListe = z.strictObject({
 
 const FREQUENCES = ['QUOTIDIENNE', 'HEBDOMADAIRE', 'MENSUELLE', 'TRIMESTRIELLE', 'ANNUELLE'] as const
 
+type TypeTacheCode = 'SIMPLE' | 'RECURRENTE'
+type FrequenceCode = (typeof FREQUENCES)[number]
+
+function estQuotidienne(typeTache: TypeTacheCode, frequence: FrequenceCode | null): boolean {
+  return typeTache === 'RECURRENTE' && frequence === 'QUOTIDIENNE'
+}
+
 const schemaCreation = z.strictObject({
-  nature: z.enum(['QUOTIDIENNE', 'AUTRE']),
   typeTache: z.enum(['SIMPLE', 'RECURRENTE']).default('SIMPLE'),
   isSupplementaire: z.boolean().default(false),
   frequence: z.enum(FREQUENCES).nullable().optional(),
@@ -138,6 +162,9 @@ const schemaCreation = z.strictObject({
 
 const schemaModification = z.strictObject({
   libelle: texteObligatoire(255).optional(),
+  typeTache: z.enum(['SIMPLE', 'RECURRENTE']).optional(),
+  frequence: z.enum(FREQUENCES).nullable().optional(),
+  dateFinRecurrence: schemaDate.nullable().optional(),
   elementId: schemaUuid.optional(),
   acteur: z.enum(['GD_TRADING', 'PARTENAIRE']).optional(),
   piloteEmployeId: schemaUuid.nullable().optional(),
@@ -196,6 +223,27 @@ const schemaCommentairesListe = z.strictObject({ ...schemaPagination })
 
 const schemaHistorique = z.strictObject({ ...schemaPagination })
 
+const schemaSousTache = z.strictObject({
+  libelle: z.string().trim().min(3, 'longueur minimale 3').max(200, 'longueur maximale 200'),
+})
+
+const schemaSousTacheOrdre = z.strictObject({
+  ids: z.array(schemaUuid).min(1),
+})
+
+const schemaSousTacheCoche = z.strictObject({
+  cochee: z.boolean(),
+})
+
+const schemaChecklistVersion = z.strictObject({
+  version: z.number().int().positive(),
+})
+
+const schemaRenvoyerChecklist = z.strictObject({
+  version: z.number().int().positive(),
+  motif: z.string().trim().min(3, 'longueur minimale 3').max(500, 'longueur maximale 500'),
+})
+
 function autoriserVue(auth: AuthSession, vue: Vue, departementId: string | undefined): void {
   const role = auth.utilisateur.role
   if (role === 'CONSULTANT' && vue !== 'toutes') {
@@ -246,6 +294,26 @@ function perimetreService(departementId: string): Prisma.TacheWhereInput {
   }
 }
 
+function perimetreTableauDeBord(auth: AuthSession): Prisma.TacheWhereInput | null {
+  const role = auth.utilisateur.role
+  if (role === 'ADMIN' || role === 'CONSULTANT') return null
+  if (role === 'RESPONSABLE') {
+    const departementId = auth.utilisateur.serviceId ?? auth.employe?.departementId ?? null
+    return departementId === null ? { id: { in: [] } } : perimetreService(departementId)
+  }
+  return perimetrePropre(auth)
+}
+
+function conditionDate(date: CalendarDate, champ: ChampDate): Prisma.TacheWhereInput {
+  const jour = calendarDateToUtcDate(date)
+  if (champ === 'dateAction') return { dateAction: jour }
+  if (champ === 'dateDebut') return { dateDebut: jour }
+  if (champ === 'dateFinPrevue') return { dateFinPrevue: jour }
+  return {
+    OR: [{ dateAction: jour }, { dateDebut: jour }, { dateFinPrevue: jour }],
+  }
+}
+
 function construireWhereListe(
   auth: AuthSession,
   parametres: z.infer<typeof schemaListe>,
@@ -257,7 +325,15 @@ function construireWhereListe(
     parametres.supprimees === true && auth.utilisateur.role === 'ADMIN'
   if (!inclureSupprimees) conditions.push({ supprimeLe: null })
 
-  if (parametres.nature !== undefined) conditions.push({ nature: parametres.nature })
+  // Confidentialité des tâches supplémentaires : elles ne sont visibles que par
+  // leur créateur, dans toutes les vues et pour tous les rôles (ADMIN et
+  // CONSULTANT compris).
+  conditions.push({
+    OR: [{ isSupplementaire: false }, { creeParId: auth.utilisateur.id }],
+  })
+
+  if (parametres.typeTache !== undefined) conditions.push({ typeTache: parametres.typeTache })
+  if (parametres.frequence !== undefined) conditions.push({ frequence: parametres.frequence })
   if (parametres.elementId !== undefined) conditions.push({ elementId: parametres.elementId })
   if (parametres.assigneAId !== undefined) {
     // Filtre générique : l'identifiant peut désigner un employé ou un partenaire.
@@ -277,6 +353,11 @@ function construireWhereListe(
   if (parametres.urgenceId !== undefined) conditions.push({ urgenceId: parametres.urgenceId })
   if (parametres.importanceId !== undefined) conditions.push({ importanceId: parametres.importanceId })
 
+  // Filtre par date sur un champ précis, ou sur l'un des trois champs du tableau de bord.
+  if (parametres.date !== undefined) {
+    conditions.push(conditionDate(parametres.date, parametres.champDate))
+  }
+
   switch (parametres.vue) {
     case 'toutes':
       break
@@ -291,10 +372,17 @@ function construireWhereListe(
       conditions.push(perimetreService(departementId))
       break
     }
-    case 'mes-taches-du-jour':
-      conditions.push(perimetrePropre(auth))
-      conditions.push({ dateAction: calendarDateToUtcDate(calendrier.aujourdhui) })
+    case 'mes-taches-du-jour': {
+      // Tableau de bord : périmètre de l'utilisateur (tout pour l'admin,
+      // service pour le responsable, tâches propres pour l'employé) et
+      // uniquement les tâches liées au jour même (action, début ou fin prévue).
+      const perimetre = perimetreTableauDeBord(auth)
+      if (perimetre !== null) conditions.push(perimetre)
+      if (parametres.date === undefined) {
+        conditions.push(conditionDate(calendrier.aujourdhui, parametres.champDate))
+      }
       break
+    }
     case 'mes-autres-taches':
       conditions.push({ nature: 'AUTRE' })
       if (auth.employe === null) {
@@ -306,22 +394,10 @@ function construireWhereListe(
     case 'mes-taches':
       conditions.push(perimetrePropre(auth))
       break
-    case 'supplementaires': {
+    case 'supplementaires':
+      // Le filtre « créateur uniquement » est déjà appliqué globalement.
       conditions.push({ isSupplementaire: true })
-      if (auth.utilisateur.role === 'ADMIN') break
-      if (auth.utilisateur.role === 'RESPONSABLE') {
-        const departementId = auth.utilisateur.serviceId ?? auth.employe?.departementId ?? null
-        conditions.push({
-          OR: [
-            { creeParId: auth.utilisateur.id },
-            ...(departementId === null ? [] : [perimetreService(departementId)]),
-          ],
-        })
-      } else {
-        conditions.push(perimetrePropre(auth))
-      }
       break
-    }
   }
 
   return conditions.length === 0 ? {} : { AND: conditions }
@@ -520,7 +596,7 @@ interface DatesCoherence {
   dateFinPrevue: CalendarDate | null
 }
 
-function verifierDates(dates: DatesCoherence, nature: 'QUOTIDIENNE' | 'AUTRE'): void {
+function verifierDates(dates: DatesCoherence, quotidienne: boolean): void {
   if (compareCalendarDates(dates.dateAction, dates.dateDebut) > 0) {
     throw new ApiError(
       422,
@@ -529,7 +605,7 @@ function verifierDates(dates: DatesCoherence, nature: 'QUOTIDIENNE' | 'AUTRE'): 
     )
   }
 
-  if (nature === 'QUOTIDIENNE') {
+  if (quotidienne) {
     if (dates.dateFinPrevue !== null || dates.dateAction !== dates.dateDebut) {
       throw new ApiError(
         422,
@@ -842,6 +918,30 @@ function retardDeTache(tache: TacheComplete, calendrier: ContexteCalendrier) {
   })
 }
 
+function estExecutantChecklist(auth: AuthSession, tache: TacheComplete): boolean {
+  if (tache.isSupplementaire) return tache.creeParId === auth.utilisateur.id
+  return tache.assigneAEmployeId !== null && auth.employe?.id === tache.assigneAEmployeId
+}
+
+function contexteChecklist(auth: AuthSession, tache: TacheComplete): ContexteChecklist {
+  return {
+    role: auth.utilisateur.role,
+    estExecutant: estExecutantChecklist(auth, tache),
+    estAdmin: auth.utilisateur.role === 'ADMIN',
+    statut: tache.statutChecklist,
+  }
+}
+
+function verifierChecklistDemarrable(tache: TacheComplete): void {
+  if (checklistBloquante(tache.statutChecklist, tache.sousTaches.length)) {
+    throw new ApiError(
+      422,
+      'CHECKLIST_NON_VALIDEE',
+      'La checklist doit être validée avant de démarrer cette tâche.',
+    )
+  }
+}
+
 export function createTasksRouter(ctx: AppContext): Router {
   const routeur = Router()
   routeur.use(requireAuth)
@@ -871,7 +971,7 @@ export function createTasksRouter(ctx: AppContext): Router {
       lignes = lignes.filter((ligne) => statuts.includes(ligne.statut.code as StatutCode))
     }
 
-    if (parametres.vue === 'mes-taches-du-jour' || parametres.vue === 'mes-autres-taches') {
+    if (parametres.vue === 'mes-autres-taches') {
       lignes = lignes.filter(
         (ligne) => ligne.statut.code !== 'ACHEVEE' && ligne.statut.code !== 'ANNULEE',
       )
@@ -996,13 +1096,15 @@ export function createTasksRouter(ctx: AppContext): Router {
     }
 
     const dateFinPrevue = corps.dateFinPrevue ?? null
+    const typeTache = corps.typeTache
+    const frequence = typeTache === 'RECURRENTE' ? corps.frequence ?? null : null
+    const dateFinRecurrence = typeTache === 'RECURRENTE' ? corps.dateFinRecurrence ?? null : null
+    const quotidienne = estQuotidienne(typeTache, frequence)
+    const nature = quotidienne ? 'QUOTIDIENNE' : 'AUTRE'
     verifierDates(
       { dateAction: corps.dateAction, dateDebut: corps.dateDebut, dateFinPrevue },
-      corps.nature,
+      quotidienne,
     )
-    const dateFinRecurrence = corps.isSupplementaire ? null : corps.dateFinRecurrence ?? null
-    const typeTache = corps.isSupplementaire ? 'SIMPLE' : corps.typeTache
-    const frequence = corps.isSupplementaire ? null : corps.frequence ?? null
     verifierRecurrence({
       typeTache,
       frequence,
@@ -1010,7 +1112,7 @@ export function createTasksRouter(ctx: AppContext): Router {
       dateDebut: corps.dateDebut,
     })
 
-    if (corps.nature === 'QUOTIDIENNE') {
+    if (quotidienne) {
       if (!estJourOuvre(corps.dateAction, calendrier.calendrier)) {
         throw new ApiError(
           422,
@@ -1066,7 +1168,7 @@ export function createTasksRouter(ctx: AppContext): Router {
     const tacheCreee = await ctx.prisma.$transaction(async (tx) => {
       const tache = await tx.tache.create({
         data: {
-          nature: corps.nature,
+          nature,
           typeTache,
           isSupplementaire: corps.isSupplementaire,
           frequence,
@@ -1221,9 +1323,26 @@ export function createTasksRouter(ctx: AppContext): Router {
           : tache.dateFinPrevue.toISOString().slice(0, 10)
         : corps.dateFinPrevue
 
-    verifierDates({ dateAction, dateDebut, dateFinPrevue }, tache.nature)
+    const typeTache = corps.typeTache ?? tache.typeTache
+    const frequence =
+      typeTache === 'RECURRENTE'
+        ? ((corps.frequence !== undefined ? corps.frequence : tache.frequence) ?? null)
+        : null
+    const dateFinRecurrence =
+      typeTache === 'RECURRENTE'
+        ? corps.dateFinRecurrence !== undefined
+          ? corps.dateFinRecurrence
+          : tache.dateFinRecurrence === null
+            ? null
+            : tache.dateFinRecurrence.toISOString().slice(0, 10)
+        : null
+    const quotidienne = estQuotidienne(typeTache, frequence)
+    const nature = quotidienne ? 'QUOTIDIENNE' : 'AUTRE'
 
-    if (tache.nature === 'QUOTIDIENNE' && corps.dateAction !== undefined) {
+    verifierRecurrence({ typeTache, frequence, dateFinRecurrence, dateDebut })
+    verifierDates({ dateAction, dateDebut, dateFinPrevue }, quotidienne)
+
+    if (quotidienne && corps.dateAction !== undefined) {
       if (!estJourOuvre(dateAction, calendrier.calendrier)) {
         throw new ApiError(
           422,
@@ -1269,6 +1388,11 @@ export function createTasksRouter(ctx: AppContext): Router {
         where: { id, version: corps.version },
         data: {
           ...(corps.libelle === undefined ? {} : { libelle: corps.libelle.trim() }),
+          nature,
+          typeTache,
+          frequence,
+          dateFinRecurrence:
+            dateFinRecurrence === null ? null : calendarDateToUtcDate(dateFinRecurrence),
           ...(corps.elementId === undefined ? {} : { elementId: corps.elementId }),
           ...(corps.acteur === undefined ? {} : { acteur: corps.acteur }),
           ...(corps.piloteEmployeId === undefined && !changementActeur
@@ -1405,6 +1529,7 @@ export function createTasksRouter(ctx: AppContext): Router {
     const id = lireUuid(req.params['id'])
     const corps = parseBody(schemaProgression, req)
     const tache = await chargerTacheVisible(ctx, auth, id)
+    verifierChecklistDemarrable(tache)
     if (
       tache.creeParId !== auth.utilisateur.id &&
       !peutModifierTache(auth, pourAutorisation(tache))
@@ -1633,6 +1758,7 @@ export function createTasksRouter(ctx: AppContext): Router {
     const id = lireUuid(req.params['id'])
     const corps = parseBody(schemaCloture, req)
     const tache = await chargerTacheModifiable(ctx, auth, id)
+    verifierChecklistDemarrable(tache)
     verifierVersion(tache, corps.version)
     const calendrier = await chargerCalendrier(ctx)
 
@@ -1681,7 +1807,7 @@ export function createTasksRouter(ctx: AppContext): Router {
     }
 
     const occurrence =
-      !tache.isSupplementaire && tache.typeTache === 'RECURRENTE' && tache.frequence !== null
+      tache.typeTache === 'RECURRENTE' && tache.frequence !== null
         ? (() => {
             const origineId = tache.tacheOrigineId ?? tache.id
             const dateAction = ajouterFrequence(
@@ -1764,7 +1890,7 @@ export function createTasksRouter(ctx: AppContext): Router {
             data: {
               nature: tache.nature,
               typeTache: 'RECURRENTE',
-              isSupplementaire: false,
+              isSupplementaire: tache.isSupplementaire,
               frequence: tache.frequence,
               dateFinRecurrence: tache.dateFinRecurrence,
               tacheOrigineId: occurrence.origineId,
@@ -1786,10 +1912,25 @@ export function createTasksRouter(ctx: AppContext): Router {
               actionAPrendreId,
               creeParId: tache.creeParId,
               attribueParId: tache.attribueParId,
+              statutChecklist: tache.statutChecklist,
+              dateSoumissionChecklist: tache.dateSoumissionChecklist,
+              dateValidationChecklist: tache.dateValidationChecklist,
+              valideParChecklistId: tache.valideParChecklistId,
               creeLe: calendrier.maintenant,
               modifieLe: calendrier.maintenant,
             },
           })
+          if (tache.statutChecklist === 'VALIDEE' && tache.sousTaches.length > 0) {
+            await tx.sousTache.createMany({
+              data: tache.sousTaches.map((sousTache) => ({
+                tacheId: suivante.id,
+                libelle: sousTache.libelle,
+                ordre: sousTache.ordre,
+                creeParId: sousTache.creeParId,
+                creeLe: calendrier.maintenant,
+              })),
+            })
+          }
           await ecrireAudit(tx, {
             acteurId: auth.utilisateur.id,
             typeOperation: 'CREATION',
@@ -1808,6 +1949,324 @@ export function createTasksRouter(ctx: AppContext): Router {
 
     const complete = await chargerTache(ctx, id)
     res.status(200).json(toTacheDetail(complete, calendrier))
+  })
+
+  routeur.post('/:id/checklist', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const corps = parseBody(schemaSousTache, req)
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (!peutStructurerChecklist(contexteChecklist(auth, tache))) {
+      throw new ApiError(403, 'ACTION_NON_AUTORISEE', 'Vous ne pouvez pas modifier cette checklist.')
+    }
+    const calendrier = await chargerCalendrier(ctx)
+    const ordre =
+      tache.sousTaches.reduce((maximum, sousTache) => Math.max(maximum, sousTache.ordre), -1) + 1
+
+    await ctx.prisma.$transaction(async (tx) => {
+      const creee = await tx.sousTache.create({
+        data: {
+          tacheId: id,
+          libelle: corps.libelle,
+          ordre,
+          creeParId: auth.utilisateur.id,
+          creeLe: calendrier.maintenant,
+        },
+      })
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_AJOUT',
+        entite: 'tache',
+        entiteId: id,
+        donneesApres: { sousTacheId: creee.id, libelle: corps.libelle, ordre } as Prisma.InputJsonValue,
+      })
+    })
+
+    const complete = await chargerTache(ctx, id)
+    res.status(201).json(toTacheDetail(complete, calendrier))
+  })
+
+  routeur.patch('/:id/checklist/:sousTacheId', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const sousTacheId = lireUuid(req.params['sousTacheId'])
+    const corps = parseBody(schemaSousTache, req)
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (!peutStructurerChecklist(contexteChecklist(auth, tache))) {
+      throw new ApiError(403, 'ACTION_NON_AUTORISEE', 'Vous ne pouvez pas modifier cette checklist.')
+    }
+    const existante = tache.sousTaches.find((sousTache) => sousTache.id === sousTacheId)
+    if (existante === undefined) {
+      throw new ApiError(404, 'RESSOURCE_INTROUVABLE', 'La sous-tâche demandée est introuvable.')
+    }
+    const calendrier = await chargerCalendrier(ctx)
+
+    await ctx.prisma.$transaction(async (tx) => {
+      await tx.sousTache.update({ where: { id: sousTacheId }, data: { libelle: corps.libelle } })
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_MODIFICATION',
+        entite: 'tache',
+        entiteId: id,
+        donneesAvant: { sousTacheId, libelle: existante.libelle } as Prisma.InputJsonValue,
+        donneesApres: { sousTacheId, libelle: corps.libelle } as Prisma.InputJsonValue,
+      })
+    })
+
+    res.status(200).json(toTacheDetail(await chargerTache(ctx, id), calendrier))
+  })
+
+  routeur.delete('/:id/checklist/:sousTacheId', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const sousTacheId = lireUuid(req.params['sousTacheId'])
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (!peutStructurerChecklist(contexteChecklist(auth, tache))) {
+      throw new ApiError(403, 'ACTION_NON_AUTORISEE', 'Vous ne pouvez pas modifier cette checklist.')
+    }
+    const existante = tache.sousTaches.find((sousTache) => sousTache.id === sousTacheId)
+    if (existante === undefined) {
+      throw new ApiError(404, 'RESSOURCE_INTROUVABLE', 'La sous-tâche demandée est introuvable.')
+    }
+    const calendrier = await chargerCalendrier(ctx)
+
+    await ctx.prisma.$transaction(async (tx) => {
+      await tx.sousTache.delete({ where: { id: sousTacheId } })
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_SUPPRESSION',
+        entite: 'tache',
+        entiteId: id,
+        donneesAvant: { sousTacheId, libelle: existante.libelle } as Prisma.InputJsonValue,
+      })
+    })
+
+    res.status(200).json(toTacheDetail(await chargerTache(ctx, id), calendrier))
+  })
+
+  routeur.put('/:id/checklist/ordre', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const corps = parseBody(schemaSousTacheOrdre, req)
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (!peutStructurerChecklist(contexteChecklist(auth, tache))) {
+      throw new ApiError(403, 'ACTION_NON_AUTORISEE', 'Vous ne pouvez pas modifier cette checklist.')
+    }
+    const attendues = new Set(tache.sousTaches.map((sousTache) => sousTache.id))
+    if (attendues.size !== corps.ids.length || corps.ids.some((valeur) => !attendues.has(valeur))) {
+      throw new ApiError(422, 'ORDRE_INVALIDE', 'La liste des sous-tâches est incohérente.')
+    }
+    const calendrier = await chargerCalendrier(ctx)
+
+    await ctx.prisma.$transaction(async (tx) => {
+      for (const [index, sousTacheId] of corps.ids.entries()) {
+        await tx.sousTache.update({ where: { id: sousTacheId }, data: { ordre: index } })
+      }
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_ORDRE',
+        entite: 'tache',
+        entiteId: id,
+        donneesApres: { ids: corps.ids } as Prisma.InputJsonValue,
+      })
+    })
+
+    res.status(200).json(toTacheDetail(await chargerTache(ctx, id), calendrier))
+  })
+
+  routeur.patch('/:id/checklist/:sousTacheId/coche', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const sousTacheId = lireUuid(req.params['sousTacheId'])
+    const corps = parseBody(schemaSousTacheCoche, req)
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (!peutCocherChecklist(contexteChecklist(auth, tache))) {
+      throw new ApiError(
+        tache.statutChecklist === 'VALIDEE' ? 403 : 422,
+        tache.statutChecklist === 'VALIDEE' ? 'ACTION_NON_AUTORISEE' : 'CHECKLIST_NON_VALIDEE',
+        tache.statutChecklist === 'VALIDEE'
+          ? 'Vous ne pouvez pas cocher cette sous-tâche.'
+          : 'La checklist doit être validée avant de cocher une sous-tâche.',
+      )
+    }
+    const existante = tache.sousTaches.find((sousTache) => sousTache.id === sousTacheId)
+    if (existante === undefined) {
+      throw new ApiError(404, 'RESSOURCE_INTROUVABLE', 'La sous-tâche demandée est introuvable.')
+    }
+    const calendrier = await chargerCalendrier(ctx)
+
+    await ctx.prisma.$transaction(async (tx) => {
+      await tx.sousTache.update({
+        where: { id: sousTacheId },
+        data: {
+          cochee: corps.cochee,
+          dateCochee: corps.cochee ? calendrier.maintenant : null,
+          cocheeParId: corps.cochee ? auth.utilisateur.id : null,
+        },
+      })
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_COCHE',
+        entite: 'tache',
+        entiteId: id,
+        donneesAvant: { sousTacheId, cochee: existante.cochee } as Prisma.InputJsonValue,
+        donneesApres: { sousTacheId, cochee: corps.cochee } as Prisma.InputJsonValue,
+      })
+    })
+
+    res.status(200).json(toTacheDetail(await chargerTache(ctx, id), calendrier))
+  })
+
+  routeur.post('/:id/checklist/soumettre', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const corps = parseBody(schemaChecklistVersion, req)
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (!peutSoumettreChecklist(contexteChecklist(auth, tache))) {
+      throw new ApiError(403, 'ACTION_NON_AUTORISEE', 'Vous ne pouvez pas soumettre cette checklist.')
+    }
+    verifierVersion(tache, corps.version)
+    if (tache.sousTaches.length === 0) {
+      throw new ApiError(422, 'CHECKLIST_VIDE', 'La checklist doit contenir au moins une sous-tâche.')
+    }
+    const calendrier = await chargerCalendrier(ctx)
+    const automatique = auth.utilisateur.role === 'ADMIN' || tache.isSupplementaire
+    const premiereValidation = appliquerDateDebutValidation(tache.dateValidationChecklist)
+    const dateDebut = premiereValidation
+      ? calendrier.aujourdhui
+      : utcDateToCalendarDate(tache.dateDebut)
+
+    await ctx.prisma.$transaction(async (tx) => {
+      await tx.tache.updateMany({
+        where: { id, version: corps.version },
+        data: {
+          statutChecklist: automatique ? 'VALIDEE' : 'SOUMISE',
+          dateSoumissionChecklist: calendrier.maintenant,
+          motifRenvoiChecklist: null,
+          ...(automatique
+            ? {
+                dateValidationChecklist: calendrier.maintenant,
+                valideParChecklistId: auth.utilisateur.id,
+                ...(premiereValidation
+                  ? { dateDebut: calendarDateToUtcDate(dateDebut), statut: 'EN_COURS' as const }
+                  : {}),
+              }
+            : {}),
+          modifieLe: calendrier.maintenant,
+          version: { increment: 1 },
+        },
+      })
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_SOUMISSION',
+        entite: 'tache',
+        entiteId: id,
+        donneesAvant: {
+          statutChecklist: tache.statutChecklist,
+          dateDebut: utcDateToCalendarDate(tache.dateDebut),
+        } as Prisma.InputJsonValue,
+        donneesApres: {
+          statutChecklist: automatique ? 'VALIDEE' : 'SOUMISE',
+          dateDebut,
+          automatique,
+        } as Prisma.InputJsonValue,
+      })
+    })
+
+    res.status(200).json(toTacheDetail(await chargerTache(ctx, id), calendrier))
+  })
+
+  routeur.post('/:id/checklist/valider', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const corps = parseBody(schemaChecklistVersion, req)
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (!peutValiderChecklist(contexteChecklist(auth, tache))) {
+      throw new ApiError(
+        auth.utilisateur.role === 'ADMIN' ? 409 : 403,
+        auth.utilisateur.role === 'ADMIN' ? 'CHECKLIST_NON_SOUMISE' : 'ACTION_NON_AUTORISEE',
+        auth.utilisateur.role === 'ADMIN'
+          ? 'Seule une checklist soumise peut être validée.'
+          : 'Seul un administrateur valide une checklist.',
+      )
+    }
+    verifierVersion(tache, corps.version)
+    const calendrier = await chargerCalendrier(ctx)
+    const premiereValidation = appliquerDateDebutValidation(tache.dateValidationChecklist)
+    const dateDebut = premiereValidation
+      ? calendrier.aujourdhui
+      : utcDateToCalendarDate(tache.dateDebut)
+
+    await ctx.prisma.$transaction(async (tx) => {
+      await tx.tache.updateMany({
+        where: { id, version: corps.version },
+        data: {
+          statutChecklist: 'VALIDEE',
+          dateValidationChecklist: calendrier.maintenant,
+          valideParChecklistId: auth.utilisateur.id,
+          motifRenvoiChecklist: null,
+          ...(premiereValidation
+            ? { dateDebut: calendarDateToUtcDate(dateDebut), statut: 'EN_COURS' as const }
+            : {}),
+          modifieLe: calendrier.maintenant,
+          version: { increment: 1 },
+        },
+      })
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_VALIDATION',
+        entite: 'tache',
+        entiteId: id,
+        donneesAvant: {
+          statutChecklist: tache.statutChecklist,
+          dateDebut: utcDateToCalendarDate(tache.dateDebut),
+        } as Prisma.InputJsonValue,
+        donneesApres: { statutChecklist: 'VALIDEE', dateDebut } as Prisma.InputJsonValue,
+      })
+    })
+
+    res.status(200).json(toTacheDetail(await chargerTache(ctx, id), calendrier))
+  })
+
+  routeur.post('/:id/checklist/renvoyer', async (req, res) => {
+    const auth = authOf(req)
+    const id = lireUuid(req.params['id'])
+    const corps = parseBody(schemaRenvoyerChecklist, req)
+    const tache = await chargerTacheVisible(ctx, auth, id)
+    if (auth.utilisateur.role !== 'ADMIN' || tache.statutChecklist !== 'SOUMISE') {
+      throw new ApiError(
+        auth.utilisateur.role === 'ADMIN' ? 409 : 403,
+        auth.utilisateur.role === 'ADMIN' ? 'CHECKLIST_NON_SOUMISE' : 'ACTION_NON_AUTORISEE',
+        auth.utilisateur.role === 'ADMIN'
+          ? 'Seule une checklist soumise peut être renvoyée.'
+          : 'Seul un administrateur renvoie une checklist.',
+      )
+    }
+    verifierVersion(tache, corps.version)
+    const calendrier = await chargerCalendrier(ctx)
+
+    await ctx.prisma.$transaction(async (tx) => {
+      await tx.tache.updateMany({
+        where: { id, version: corps.version },
+        data: {
+          statutChecklist: 'BROUILLON',
+          dateSoumissionChecklist: null,
+          motifRenvoiChecklist: corps.motif,
+          modifieLe: calendrier.maintenant,
+          version: { increment: 1 },
+        },
+      })
+      await ecrireAudit(tx, {
+        acteurId: auth.utilisateur.id,
+        typeOperation: 'CHECKLIST_RENVOI',
+        entite: 'tache',
+        entiteId: id,
+        donneesAvant: { statutChecklist: tache.statutChecklist } as Prisma.InputJsonValue,
+        donneesApres: { statutChecklist: 'BROUILLON', motif: corps.motif } as Prisma.InputJsonValue,
+      })
+    })
+
+    res.status(200).json(toTacheDetail(await chargerTache(ctx, id), calendrier))
   })
 
   routeur.get('/:id/comments', async (req, res) => {

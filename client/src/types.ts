@@ -42,12 +42,25 @@ export interface Statut {
   manuel: boolean
 }
 
+export type StatutChecklist = 'BROUILLON' | 'SOUMISE' | 'VALIDEE'
+
+export interface SousTache {
+  id: string
+  libelle: string
+  ordre: number
+  cochee: boolean
+  dateCochee: string | null
+  cocheePar: { id: string; nomComplet: string } | null
+}
+
 export interface TacheListe {
   id: string
   libelle: string
   nature: 'QUOTIDIENNE' | 'AUTRE'
   typeTache: 'RECURRENTE' | 'SIMPLE'
+  frequence: 'QUOTIDIENNE' | 'HEBDOMADAIRE' | 'MENSUELLE' | 'TRIMESTRIELLE' | 'ANNUELLE' | null
   isSupplementaire: boolean
+  checklist: { statut: StatutChecklist; total: number; cochees: number }
   statut: Statut
   progression: number | null
   priorite: { code: 'P1_CRITIQUE' | 'P2_HAUTE' | 'P3_MOYENNE' | 'P4_BASSE'; libelle: string; poids: number }
@@ -106,6 +119,11 @@ export interface TacheDetail extends TacheListe {
   creeLe: string
   modifieLe: string
   supprimeLe: string | null
+  sousTaches: SousTache[]
+  motifRenvoiChecklist: string | null
+  dateSoumissionChecklist: string | null
+  dateValidationChecklist: string | null
+  valideParChecklist: { id: string; nomComplet: string } | null
 }
 
 export interface Page<T> {

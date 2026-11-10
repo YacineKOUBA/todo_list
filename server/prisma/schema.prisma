@@ -94,6 +94,14 @@ enum StatutManuel {
   @@map("statut_manuel")
 }
 
+enum StatutChecklist {
+  BROUILLON
+  SOUMISE
+  VALIDEE
+
+  @@map("statut_checklist")
+}
+
 // ---------------------------------------------------------------------------
 // Référentiels et comptes (docs/06 §5)
 // ---------------------------------------------------------------------------
@@ -150,6 +158,9 @@ model Utilisateur {
   tachesCreees          Tache[]         @relation("TacheCreePar")
   tachesAttribuees      Tache[]         @relation("TacheAttribuePar")
   tachesSupprimees      Tache[]         @relation("TacheSupprimePar")
+  checklistsValidees    Tache[]         @relation("TacheChecklistValidee")
+  sousTachesCochees     SousTache[]     @relation("SousTacheCochee")
+  sousTachesCreees      SousTache[]     @relation("SousTacheCreee")
   commentaires          Commentaire[]
   audits                JournalAudit[]
   sessions              Session[]
@@ -278,6 +289,11 @@ model Tache {
   creeLe              DateTime      @default(now()) @map("cree_le") @db.Timestamptz(0)
   modifieLe           DateTime      @default(now()) @map("modifie_le") @db.Timestamptz(0)
   version             Int           @default(1)
+  statutChecklist        StatutChecklist @default(BROUILLON) @map("statut_checklist")
+  dateSoumissionChecklist DateTime?     @map("date_soumission_checklist") @db.Timestamptz(0)
+  dateValidationChecklist DateTime?     @map("date_validation_checklist") @db.Timestamptz(0)
+  valideParChecklistId   String?        @map("valide_par_checklist_id") @db.Uuid
+  motifRenvoiChecklist   String?        @map("motif_renvoi_checklist")
 
   element          Element         @relation(fields: [elementId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   assigneAEmploye  Employe?        @relation("TacheAssigneEmploye", fields: [assigneAEmployeId], references: [id], onDelete: Restrict, onUpdate: Cascade)
@@ -292,7 +308,9 @@ model Tache {
   creePar          Utilisateur     @relation("TacheCreePar", fields: [creeParId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   attribuePar      Utilisateur     @relation("TacheAttribuePar", fields: [attribueParId], references: [id], onDelete: Restrict, onUpdate: Cascade)
   supprimePar      Utilisateur?    @relation("TacheSupprimePar", fields: [supprimeParId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+  valideParChecklist Utilisateur?   @relation("TacheChecklistValidee", fields: [valideParChecklistId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   commentaires     Commentaire[]
+  sousTaches       SousTache[]
 
   @@index([assigneAEmployeId], map: "ix_tache_assigne_employe")
   @@index([assigneAPartenaireId], map: "ix_tache_assigne_partenaire")
@@ -306,6 +324,28 @@ model Tache {
   @@index([tacheOrigineId], map: "ix_tache_origine")
   @@index([typeTache, statut], map: "ix_tache_type_statut")
   @@map("tache")
+}
+
+// ---------------------------------------------------------------------------
+// Checklists de tâches
+// ---------------------------------------------------------------------------
+
+model SousTache {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tacheId     String      @map("tache_id") @db.Uuid
+  libelle     String
+  ordre       Int         @default(0) @db.SmallInt
+  cochee      Boolean     @default(false)
+  dateCochee  DateTime?   @map("date_cochee") @db.Timestamptz(0)
+  cocheeParId String?     @map("cochee_par_id") @db.Uuid
+  creeParId   String      @map("cree_par_id") @db.Uuid
+  creeLe      DateTime    @default(now()) @map("created_at") @db.Timestamptz(0)
+  tache       Tache       @relation(fields: [tacheId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  cocheePar   Utilisateur? @relation("SousTacheCochee", fields: [cocheeParId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  creePar     Utilisateur @relation("SousTacheCreee", fields: [creeParId], references: [id], onDelete: Restrict, onUpdate: Cascade)
+
+  @@index([tacheId, ordre], map: "ix_sous_tache_tache")
+  @@map("sous_tache")
 }
 
 // ---------------------------------------------------------------------------

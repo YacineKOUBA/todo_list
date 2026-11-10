@@ -54,11 +54,11 @@ function groupesPour(me: Me, peutCreer: boolean): GroupeNav[] {
     if (role === 'EMPLOYE') {
       travail.push({ route: '/autres-taches', libelle: 'Mes autres tâches', icone: '▤' })
     }
-    travail.push({ route: '/supplementaires', libelle: 'Tâches supplémentaires', icone: '✚' })
+    travail.push({ route: '/supplementaires', libelle: 'Mes tâches supplémentaires', icone: '✚' })
   }
 
   if (role !== 'EMPLOYE') {
-    travail.push({ route: '/supplementaires', libelle: 'Tâches supplémentaires', icone: '✚' })
+    travail.push({ route: '/supplementaires', libelle: 'Mes tâches supplémentaires', icone: '✚' })
   }
 
   const groupes: GroupeNav[] = []

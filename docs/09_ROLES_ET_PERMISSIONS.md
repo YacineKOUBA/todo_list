@@ -155,6 +155,7 @@ Le document répond à cinq questions :
 - la **modification du titulaire** (pilote, exécutant) reste limitée au **périmètre de création** (D13) : un employé ne peut pas réaffecter sa tâche à un collègue ; un responsable ne peut pas l'affecter hors de son service ;
 - un responsable qui veut retirer une tâche **créée par un employé de son service** ne peut pas la supprimer : il peut la passer en **`Annulée`** (D7, EF-52) ;
 - le `CONSULTANT` voit **toutes** les tâches mais **n'écrit jamais** (D7, D21, EF-07) ;
+- une **tâche supplémentaire** n'est visible que par **son créateur** : ni l'`ADMIN`, ni le `CONSULTANT`, ni le `RESPONSABLE` d'un service ne voient celles créées par un autre utilisateur (précision du 09/11/2026) ;
 - la consultation du journal d'audit est réservée à l'`ADMIN` : la mention « (proposition) » du cahier des charges est **close** par le contrat d'API validé (`GET /audit-events` — Admin) et **EF-77**.
 
 ---
@@ -189,6 +190,13 @@ Règle **D29 / D34 / D81** : le service porteur est le **département de l'exéc
 | `CONSULTANT` | Toutes, **lecture seule** |
 | `RESPONSABLE` | Tâches dont le **service porteur** = son département **+** ses propres tâches |
 | `EMPLOYEE` | Ses propres tâches (assignées **ou** pilotées **ou** créées) |
+
+**Tâches supplémentaires (précision du 09/11/2026)** : quel que soit leur rôle, un
+utilisateur ne voit **que les tâches supplémentaires qu'il a lui-même créées**.
+Cette règle prime sur les périmètres ci-dessus : ni l'`ADMIN`, ni le
+`CONSULTANT`, ni le `RESPONSABLE` d'un service ne voient les tâches
+supplémentaires d'un autre utilisateur. Elles n'apparaissent dans aucune vue
+(`toutes`, `service`, `mes-*`, `supplementaires`) et leur détail renvoie `404`.
 
 **Cas limites (CDC §3.3, validés)** :
 
@@ -371,9 +379,12 @@ La duplication **suit le périmètre de création** (EF-62) :
 | `mes-autres-taches` | Tâches `AUTRE` qui me sont assignées, non clôturées, non annulées | ✅ si fiche employé | ✅ si fiche employé | ✅ si fiche employé | ❌ |
 | `mes-taches` | Assignées + pilotées + créées (A13) | ✅ si fiche employé | ✅ si fiche employé | ✅ si fiche employé | ❌ |
 | `service` | Tâches dont le service porteur est mon département | ✅ (peut préciser `departementId`) | ✅ | ❌ | ❌ |
-| `toutes` | Toutes les tâches | ✅ | ❌ | ❌ | ✅ |
+| `supplementaires` | Tâches supplémentaires **que j'ai créées** | ✅ (les siennes) | ✅ (les siennes) | ✅ (les siennes) | ❌ |
+| `toutes` | Toutes les tâches, **hors tâches supplémentaires d'autrui** | ✅ | ❌ | ❌ | ✅ |
 
 > Le `CONSULTANT` n'utilise que `vue=toutes` ; toute autre vue → `403` (API §6.2). Un `ADMIN` sans fiche employé ne peut pas utiliser les vues `mes-*`.
+>
+> **Tâches supplémentaires** : filtre appliqué à **toutes** les vues — seul le créateur les voit (admin et consultant compris).
 
 **Comptage des endpoints** : 6 + 12 + 4 + 5 + 5 + 5 + 5 + 5 + 7 = **54**. ✅ Aucun endpoint du contrat n'est laissé sans règle d'accès.
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { api, ApiError } from '../api'
 import { StatusBadge } from '../components/StatusBadge'
+import { Checklist } from '../components/Checklist'
 import { Toast } from '../components/Toast'
 import type { Commentaire, EvenementHistorique, Me, Page, TacheDetail } from '../types'
 import { aujourdhuiIso, formatDate, formatDateTime, formatJours, joursEntre } from '../utils/format'
@@ -446,6 +447,16 @@ export function TaskDetail({ me, id, onRetour, onSupprimee }: TaskDetailProps) {
           )}
         </section>
       )}
+
+      <Checklist
+        tache={tache}
+        me={me}
+        onRecharger={charger}
+        onMessage={setSucces}
+        onErreur={setErreur}
+        enCours={enCours}
+        setEnCours={setEnCours}
+      />
 
       {(peutEcrire || estCreateur) && (
         <div className="actions-grille">
